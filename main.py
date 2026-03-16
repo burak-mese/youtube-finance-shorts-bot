@@ -81,7 +81,10 @@ def download_pexels_video(query, output_path):
         resp = requests.get('https://api.pexels.com/videos/search?query=finance&orientation=portrait&per_page=10', headers=headers)
         videos = resp.json().get('videos', [])
     video = random.choice(videos[:5])
-    video_files = sorted([f for f in video['video_files'] if f.get('quality') in ['hd','sd']], key=lambda x: x.get('width',0), reverse=True)
+    video_files = sorted(video['video_files'], key=lambda x: x.get('width',0), reverse=True)
+    if not video_files:
+        video = videos[0]
+        video_files = sorted(video['video_files'], key=lambda x: x.get('width',0), reverse=True)
     r = requests.get(video_files[0]['link'], stream=True)
     with open(output_path, 'wb') as f:
         for chunk in r.iter_content(chunk_size=8192):
