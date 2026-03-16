@@ -73,18 +73,21 @@ async def generate_audio(script, output_path):
 
 def download_pexels_video(query, output_path):
     headers = {'Authorization': PEXELS_API_KEY}
-    url = f'https://api.pexels.com/videos/search?query={query}&orientation=portrait&per_page=10&size=medium'
+    url = f'https://api.pexels.com/videos/search?query={query}&orientation=portrait&per_page=15&size=medium'
     resp = requests.get(url, headers=headers)
     data = resp.json()
     videos = data.get('videos', [])
     if not videos:
-        resp = requests.get('https://api.pexels.com/videos/search?query=finance&orientation=portrait&per_page=10', headers=headers)
+        resp = requests.get('https://api.pexels.com/videos/search?query=finance&orientation=portrait&per_page=15&size=medium', headers=headers)
         videos = resp.json().get('videos', [])
+    if not videos:
+        raise Exception(f'No Pexels videos found for: {query}')
     video = random.choice(videos[:5])
-    video_files = sorted(video['video_files'], key=lambda x: x.get('width',0), reverse=True)
-    if not video_files:
-        video = videos[0]
-        video_files = sorted(video['video_files'], key=lambda x: x.get('width',0), reverse=True)
+    # Prefer portrait files with width <= 1080 to avoid ffmpeg overflow
+    portrait_files = [f for f in video['video_files'] if f.get('width', 9999) <= 1080]
+    if not portrait_files:
+        portrait_files = video['video_files']
+    video_files = sorted(portrait_files, key=lambda x: x.get('width', 0), reverse=True)
     r = requests.get(video_files[0]['link'], stream=True)
     with open(output_path, 'wb') as f:
         for chunk in r.iter_content(chunk_size=8192):
@@ -162,21 +165,27 @@ async def main():
     scripts = generate_scripts(articles)
     print(f'Generated {len(scripts)} scripts')
     youtube = get_youtube_service()
+    success = 0
     for i, item in enumerate(scripts):
         print(f'--- Video {i+1}/{len(scripts)}: {item["title"]} ---')
-        with tempfile.TemporaryDirectory() as tmpdir:
-            audio_path = os.path.join(tmpdir, 'audio.mp3')
-            video_raw  = os.path.join(tmpdir, 'raw.mp4')
-            video_out  = os.path.join(tmpdir, 'output.mp4')
-            print('Generating audio...')
-            await generate_audio(item['script'], audio_path)
-            print('Downloading Pexels video...')
-            download_pexels_video(item.get('search_query', random.choice(PEXELS_QUERIES)), video_raw)
-            print('Creating Shorts video...')
-            create_shorts_video(video_raw, audio_path, item['script'], video_out)
-            print('Uploading to YouTube...')
-            upload_to_youtube(youtube, video_out, item['title'], item['tags'])
-    print('All done!')
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                audio_path = os.path.join(tmpdir, 'audio.mp3')
+                video_raw  = os.path.join(tmpdir, 'raw.mp4')
+                video_out  = os.path.join(tmpdir, 'output.mp4')
+                print('Generating audio...')
+                await generate_audio(item['script'], audio_path)
+                print('Downloading Pexels video...')
+                download_pexels_video(item.get('search_query', random.choice(PEXELS_QUERIES)), video_raw)
+                print('Creating Shorts video...')
+                create_shorts_video(video_raw, audio_path, item['script'], video_out)
+                print('Uploading to YouTube...')
+                upload_to_youtube(youtube, video_out, item['title'], item['tags'])
+                success += 1
+        except Exception as e:
+            print(f'ERROR on video {i+1}: {e} — skipping!')
+            continue
+    print(f'All done! {success}/{len(scripts)} videos uploaded.')
 
 if __name__ == '__main__':
     asyncio.run(main())
