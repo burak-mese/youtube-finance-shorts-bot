@@ -22,7 +22,7 @@ YOUTUBE_REFRESH_TOKEN = os.environ['YOUTUBE_REFRESH_TOKEN']
 
 VIDEOS_PER_RUN = 6
 
-# ── EXPANDED RSS FEEDS (8 sources!) ──────────────────────────────────────────
+# ââ EXPANDED RSS FEEDS (8 sources!) ââââââââââââââââââââââââââââââââââââââââââ
 RSS_FEEDS = [
     'https://feeds.reuters.com/reuters/businessNews',
     'https://finance.yahoo.com/news/rssindex',
@@ -42,7 +42,7 @@ PEXELS_QUERIES = [
 
 SEEN_TITLES_FILE = '/tmp/seen_titles.json'
 
-# ── 1. DUPLICATE DETECTION ────────────────────────────────────────────────────
+# ââ 1. DUPLICATE DETECTION ââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def load_seen_titles():
     """Load previously used article titles from GitHub Gist or temp file."""
     github_token = os.environ.get('GITHUB_TOKEN')
@@ -98,14 +98,14 @@ def save_seen_titles(titles):
                 headers={'Authorization': f'token {github_token}'},
                 json=gist_data
             )
-        print(f'✅ Saved {len(titles)} seen titles to Gist')
+        print(f'â Saved {len(titles)} seen titles to Gist')
     except Exception as e:
         print(f'Could not save seen titles: {e}')
 
 def title_hash(title):
     return hashlib.md5(title.lower().strip()[:50].encode()).hexdigest()
 
-# ── 2. FETCH NEWS ─────────────────────────────────────────────────────────────
+# ââ 2. FETCH NEWS âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def fetch_news(seen_titles):
     articles = []
     for url in RSS_FEEDS:
@@ -128,7 +128,7 @@ def fetch_news(seen_titles):
     print(f'Found {len(articles)} fresh articles (duplicates filtered)')
     return articles[:25]
 
-# ── 3. GENERATE SCRIPTS ───────────────────────────────────────────────────────
+# ââ 3. GENERATE SCRIPTS âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def generate_scripts(articles):
     articles_text = '\n'.join([
         f"{i+1}. {a['title']}: {a['summary']}"
@@ -151,7 +151,7 @@ Rules:
 - Conversational, energetic tone
 
 Return ONLY valid JSON array, no markdown:
-[{{"title":"catchy title max 60 chars","script":"full script","tags":["finance","money","investing","stocks"],"search_query":"pexels video search 2-3 words","emoji":"📈"}}]"""
+[{{"title":"catchy title max 60 chars","script":"full script","tags":["finance","money","investing","stocks"],"search_query":"pexels video search 2-3 words","emoji":"ð"}}]"""
 
     headers = {'Authorization': f'Bearer {GROQ_API_KEY}', 'Content-Type': 'application/json'}
     payload = json.dumps({
@@ -170,12 +170,12 @@ Return ONLY valid JSON array, no markdown:
             text = text[4:]
     return json.loads(text.strip())
 
-# ── 4. GENERATE AUDIO ─────────────────────────────────────────────────────────
+# ââ 4. GENERATE AUDIO âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async def generate_audio(script, output_path):
     communicate = edge_tts.Communicate(script, voice='en-US-GuyNeural', rate='+10%')
     await communicate.save(output_path)
 
-# ── 5. DOWNLOAD PEXELS VIDEO ──────────────────────────────────────────────────
+# ââ 5. DOWNLOAD PEXELS VIDEO ââââââââââââââââââââââââââââââââââââââââââââââââââ
 def download_pexels_video(query, output_path):
     headers = {'Authorization': PEXELS_API_KEY}
     url = f'https://api.pexels.com/videos/search?query={query}&orientation=portrait&per_page=15&size=medium'
@@ -197,7 +197,7 @@ def download_pexels_video(query, output_path):
         for chunk in r.iter_content(chunk_size=8192):
             f.write(chunk)
 
-# ── 6. CREATE THUMBNAIL ───────────────────────────────────────────────────────
+# ââ 6. CREATE THUMBNAIL âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def create_thumbnail(video_path, title, emoji, output_path):
     try:
         frame_path = output_path.replace('.jpg', '_frame.jpg')
@@ -217,20 +217,54 @@ def create_thumbnail(video_path, title, emoji, output_path):
         print(f'Thumbnail failed: {e}')
         return None
 
-# ── 7. CREATE SHORTS VIDEO ────────────────────────────────────────────────────
-def create_shorts_video(video_path, audio_path, output_path):
+# ââ 7. CREATE SHORTS VIDEO ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+def create_shorts_video(video_path, audio_path, output_path, title='', emoji='📈'):
     result = subprocess.run(
         ['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
          '-of', 'default=noprint_wrappers=1:nokey=1', audio_path],
         capture_output=True, text=True
     )
     duration = float(result.stdout.strip())
+
+    # Build visual overlay: dark gradient + title text + branding
+    safe_title = title.replace("'", "").replace('"', '').replace(':', ' ').replace('%', 'pct')[:35]
+    safe_title_upper = safe_title.upper()
+
+    # Multi-line title: split into 2 lines if long
+    words = safe_title_upper.split()
+    mid = len(words) // 2
+    line1 = ' '.join(words[:mid]) if len(words) > 3 else safe_title_upper
+    line2 = ' '.join(words[mid:]) if len(words) > 3 else ''
+
+    vf = (
+        # Scale to shorts format
+        'scale=1080:1920,'
+        # Dark gradient overlay at top and bottom
+        'drawbox=x=0:y=0:w=iw:h=300:color=black@0.7:t=fill,'
+        'drawbox=x=0:y=1620:w=iw:h=300:color=black@0.7:t=fill,'
+        # Red accent bar at top
+        'drawbox=x=0:y=295:w=iw:h=8:color=0xff0000@0.9:t=fill,'
+        # BREAKING NEWS label
+        "drawtext=text='📊 FINANCE NEWS':fontcolor=0xff4444:fontsize=36:x=(w-text_w)/2:y=30:box=0,"
+        # Main title line 1
+        f"drawtext=text='{line1}':fontcolor=white:fontsize=58:x=(w-text_w)/2:y=100:box=0:fontweight=bold,"
+    )
+    if line2:
+        vf += f"drawtext=text='{line2}':fontcolor=white:fontsize=58:x=(w-text_w)/2:y=170:box=0:fontweight=bold,"
+
+    vf += (
+        # Bottom branding
+        "drawtext=text='Follow for Daily Finance News!':fontcolor=0xffdd00:fontsize=38:x=(w-text_w)/2:y=1650:box=0,"
+        # Watch time progress bar background
+        'drawbox=x=0:y=1910:w=iw:h=10:color=white@0.3:t=fill'
+    )
+
     cmd = [
         'ffmpeg', '-y',
         '-stream_loop', '-1', '-i', video_path,
         '-i', audio_path,
         '-map', '0:v:0', '-map', '1:a:0',
-        '-vf', 'scale=1080:1920',
+        '-vf', vf,
         '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
         '-c:a', 'aac', '-b:a', '128k',
         '-t', str(duration),
@@ -238,7 +272,7 @@ def create_shorts_video(video_path, audio_path, output_path):
     ]
     subprocess.run(cmd, check=True)
 
-# ── 8. AUTO SAVE REFRESH TOKEN ────────────────────────────────────────────────
+# ââ 8. AUTO SAVE REFRESH TOKEN ââââââââââââââââââââââââââââââââââââââââââââââââ
 def save_refresh_token_to_github(new_token):
     github_token = os.environ.get('GITHUB_TOKEN')
     github_repo = os.environ.get('GITHUB_REPO')
@@ -258,11 +292,11 @@ def save_refresh_token_to_github(new_token):
             headers={'Authorization': f'token {github_token}', 'Accept': 'application/vnd.github.v3+json'},
             json={'encrypted_value': encrypted, 'key_id': key_data['key_id']}
         )
-        print('✅ New refresh token saved to GitHub Secrets!')
+        print('â New refresh token saved to GitHub Secrets!')
     except Exception as e:
         print(f'WARNING: Could not save token: {e}')
 
-# ── 9. GET YOUTUBE SERVICE ────────────────────────────────────────────────────
+# ââ 9. GET YOUTUBE SERVICE ââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def get_youtube_service():
     creds = Credentials(
         token=None, refresh_token=YOUTUBE_REFRESH_TOKEN,
@@ -278,16 +312,16 @@ def get_youtube_service():
         print(f'Token refresh note: {e}')
     return build('youtube', 'v3', credentials=creds)
 
-# ── 10. UPLOAD TO YOUTUBE ─────────────────────────────────────────────────────
+# ââ 10. UPLOAD TO YOUTUBE âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def upload_to_youtube(youtube, video_path, title, tags, thumbnail_path=None):
     description = (
         f"{title}\n\n"
         "Stay ahead of the markets! We break down the biggest finance stories "
         "every day in 60 seconds.\n\n"
-        "⚡ Subscribe for daily finance news!\n"
-        "📈 Stock market updates\n"
-        "💰 Investing insights\n"
-        "🏦 Economic analysis\n\n"
+        "â¡ Subscribe for daily finance news!\n"
+        "ð Stock market updates\n"
+        "ð° Investing insights\n"
+        "ð¦ Economic analysis\n\n"
         "#Shorts #Finance #Money #Investing #StockMarket #FinanceNews #WallStreet #Trading"
     )
     body = {
@@ -312,21 +346,21 @@ def upload_to_youtube(youtube, video_path, title, tags, thumbnail_path=None):
         if status:
             print(f'  Upload {int(status.progress() * 100)}%')
     video_id = response['id']
-    print(f'✅ Uploaded: https://youtube.com/shorts/{video_id}')
+    print(f'â Uploaded: https://youtube.com/shorts/{video_id}')
     if thumbnail_path and os.path.exists(thumbnail_path):
         try:
             youtube.thumbnails().set(
                 videoId=video_id,
                 media_body=MediaFileUpload(thumbnail_path, mimetype='image/jpeg')
             ).execute()
-            print('✅ Thumbnail set!')
+            print('â Thumbnail set!')
         except Exception as e:
             print(f'Thumbnail skipped: {e}')
     return video_id
 
-# ── 11. MAIN ──────────────────────────────────────────────────────────────────
+# ââ 11. MAIN ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async def main():
-    print('🚀 Starting YouTube Finance Shorts Bot...')
+    print('ð Starting YouTube Finance Shorts Bot...')
 
     # Load seen titles for duplicate detection
     print('Loading seen titles for duplicate detection...')
@@ -353,22 +387,22 @@ async def main():
                 video_out      = os.path.join(tmpdir, 'output.mp4')
                 thumbnail_path = os.path.join(tmpdir, 'thumb.jpg')
 
-                print('  🎙️  Generating audio...')
+                print('  ðï¸  Generating audio...')
                 await generate_audio(item['script'], audio_path)
 
-                print('  🎬  Downloading Pexels video...')
+                print('  ð¬  Downloading Pexels video...')
                 download_pexels_video(
                     item.get('search_query', random.choice(PEXELS_QUERIES)),
                     video_raw
                 )
 
-                print('  ✂️   Creating Shorts video...')
-                create_shorts_video(video_raw, audio_path, video_out)
+                print('  âï¸   Creating Shorts video...')
+                create_shorts_video(video_raw, audio_path, video_out, title=item['title'], emoji=item.get('emoji','📈'))
 
-                print('  🖼️   Creating thumbnail...')
-                thumb = create_thumbnail(video_out, item['title'], item.get('emoji', '📈'), thumbnail_path)
+                print('  ð¼ï¸   Creating thumbnail...')
+                thumb = create_thumbnail(video_out, item['title'], item.get('emoji', 'ð'), thumbnail_path)
 
-                print('  📤  Uploading to YouTube...')
+                print('  ð¤  Uploading to YouTube...')
                 upload_to_youtube(youtube, video_out, item['title'], item['tags'], thumb)
                 success += 1
 
@@ -378,14 +412,14 @@ async def main():
                 used_hashes.add(h)
 
         except Exception as e:
-            print(f'  ❌ ERROR on video {i+1}: {e} — skipping!')
+            print(f'  â ERROR on video {i+1}: {e} â skipping!')
             continue
 
     # Save updated seen titles
     if used_hashes:
         save_seen_titles(seen_titles)
 
-    print(f'\n🎉 Done! {success}/{len(scripts)} videos uploaded.')
+    print(f'\nð Done! {success}/{len(scripts)} videos uploaded.')
 
 if __name__ == '__main__':
     asyncio.run(main())
