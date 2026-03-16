@@ -24,11 +24,11 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install feedparser google-generativeai edge-tts requests google-api-python-client google-auth google-auth-oauthlib
+          pip install feedparser edge-tts requests google-api-python-client google-auth google-auth-oauthlib
 
       - name: Run bot
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
