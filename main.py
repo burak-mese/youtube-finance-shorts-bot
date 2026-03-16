@@ -114,11 +114,15 @@ def create_shorts_video(video_path, audio_path, script, output_path):
         for i, txt in enumerate(chunks):
             f.write(f"{i+1}\n{format_time(i*tpc)} --> {format_time((i+1)*tpc)}\n{txt}\n\n")
     cmd = [
-        'ffmpeg','-y','-stream_loop','-1','-i',video_path,'-i',audio_path,
-        '-vf', 'scale=1080:1920',
+        'ffmpeg','-y',
+        '-stream_loop','-1','-i',video_path,
+        '-i',audio_path,
+        '-map','0:v:0','-map','1:a:0',
+        '-vf','scale=1080:1920',
         '-c:v','libx264','-preset','fast','-crf','23',
         '-c:a','aac','-b:a','128k',
-        '-t',str(duration),'-shortest',output_path
+        '-t',str(duration),
+        output_path
     ]
     subprocess.run(cmd, check=True)
 
