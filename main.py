@@ -115,7 +115,7 @@ def create_shorts_video(video_path, audio_path, script, output_path):
             f.write(f"{i+1}\n{format_time(i*tpc)} --> {format_time((i+1)*tpc)}\n{txt}\n\n")
     cmd = [
         'ffmpeg','-y','-stream_loop','-1','-i',video_path,'-i',audio_path,
-        '-vf', 'crop=ih*9/16:ih,scale=1080:1920',
+        '-vf', 'scale=1080:1920',
         '-c:v','libx264','-preset','fast','-crf','23',
         '-c:a','aac','-b:a','128k',
         '-t',str(duration),'-shortest',output_path
