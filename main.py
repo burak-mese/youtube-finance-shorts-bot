@@ -18,7 +18,7 @@ YOUTUBE_CLIENT_ID     = os.environ['YOUTUBE_CLIENT_ID']
 YOUTUBE_CLIENT_SECRET = os.environ['YOUTUBE_CLIENT_SECRET']
 YOUTUBE_REFRESH_TOKEN = os.environ['YOUTUBE_REFRESH_TOKEN']
 
-VIDEOS_PER_RUN = 5
+VIDEOS_PER_RUN = 6
 
 RSS_FEEDS = [
     'https://feeds.reuters.com/reuters/businessNews',
