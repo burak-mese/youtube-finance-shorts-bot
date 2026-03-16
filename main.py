@@ -6,13 +6,13 @@ import json
 import feedparser
 import tempfile
 import random
-import google.generativeai as genai
+import urllib.request
 import edge_tts
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-GEMINI_API_KEY        = os.environ['GEMINI_API_KEY']
+GROQ_API_KEY          = os.environ['GROQ_API_KEY']
 PEXELS_API_KEY        = os.environ['PEXELS_API_KEY']
 YOUTUBE_CLIENT_ID     = os.environ['YOUTUBE_CLIENT_ID']
 YOUTUBE_CLIENT_SECRET = os.environ['YOUTUBE_CLIENT_SECRET']
@@ -41,8 +41,6 @@ def fetch_news():
     return articles[:20]
 
 def generate_scripts(articles):
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-2.0-flash')
     articles_text = '\n'.join([f"{i+1}. {a['title']}: {a['summary']}" for i, a in enumerate(articles[:15])])
     prompt = f"""You are a YouTube Shorts script writer for a finance news channel.
 Here are today headlines:
@@ -52,8 +50,16 @@ Pick the {VIDEOS_PER_RUN} most engaging stories. For each write a YouTube Shorts
 Rules: Start with STRONG hook. Simple energetic language. End with: Follow for more finance news!
 Return ONLY a JSON array, no markdown, no other text:
 [{{"title":"catchy title max 60 chars","script":"full script here","tags":["finance","money","investing"],"search_query":"pexels search term"}}]"""
-    response = model.generate_content(prompt)
-    text = response.text.strip()
+
+    payload = json.dumps({"model": "llama-3.3-70b-versatile", "messages": [{"role": "user", "content": prompt}], "temperature": 0.7}).encode()
+    req = urllib.request.Request(
+        'https://api.groq.com/openai/v1/chat/completions',
+        data=payload,
+        headers={'Authorization': f'Bearer {GROQ_API_KEY}', 'Content-Type': 'application/json'}
+    )
+    with urllib.request.urlopen(req) as resp:
+        result = json.loads(resp.read())
+    text = result['choices'][0]['message']['content'].strip()
     if '```' in text:
         parts = text.split('```')
         text = parts[1] if len(parts) > 1 else parts[0]
@@ -145,7 +151,7 @@ async def main():
     print('Fetching news...')
     articles = fetch_news()
     print(f'Found {len(articles)} articles')
-    print('Generating scripts with Gemini...')
+    print('Generating scripts with Groq (Llama)...')
     scripts = generate_scripts(articles)
     print(f'Generated {len(scripts)} scripts')
     youtube = get_youtube_service()
