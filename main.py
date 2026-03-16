@@ -7,6 +7,7 @@ import feedparser
 import tempfile
 import random
 import base64
+import hashlib
 import edge_tts
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
@@ -21,67 +22,147 @@ YOUTUBE_REFRESH_TOKEN = os.environ['YOUTUBE_REFRESH_TOKEN']
 
 VIDEOS_PER_RUN = 6
 
+# ── EXPANDED RSS FEEDS (8 sources!) ──────────────────────────────────────────
 RSS_FEEDS = [
     'https://feeds.reuters.com/reuters/businessNews',
     'https://finance.yahoo.com/news/rssindex',
     'https://feeds.a.dj.com/rss/RSSMarketsMain.xml',
     'https://www.cnbc.com/id/10000664/device/rss/rss.html',
+    'https://feeds.bloomberg.com/markets/news.rss',
+    'https://www.marketwatch.com/rss/topstories',
+    'https://www.investing.com/rss/news.rss',
+    'https://feeds.feedburner.com/TheStreet-MarketNews',
 ]
 
-PEXELS_QUERIES = ['stock market trading','financial charts','wall street','business economy','investment money']
+PEXELS_QUERIES = [
+    'stock market trading', 'financial charts', 'wall street',
+    'business economy', 'investment money', 'cryptocurrency bitcoin',
+    'real estate market', 'federal reserve bank'
+]
 
-# ── 1. FETCH NEWS ─────────────────────────────────────────────────────────────
-def fetch_news():
+SEEN_TITLES_FILE = '/tmp/seen_titles.json'
+
+# ── 1. DUPLICATE DETECTION ────────────────────────────────────────────────────
+def load_seen_titles():
+    """Load previously used article titles from GitHub Gist or temp file."""
+    github_token = os.environ.get('GITHUB_TOKEN')
+    if github_token:
+        try:
+            # Try to load from GitHub Gist for persistence across runs
+            resp = requests.get(
+                'https://api.github.com/gists',
+                headers={'Authorization': f'token {github_token}'},
+                params={'per_page': 10}
+            )
+            for gist in resp.json():
+                if gist.get('description') == 'youtube-bot-seen-titles':
+                    content = requests.get(
+                        list(gist['files'].values())[0]['raw_url']
+                    ).json()
+                    return set(content.get('titles', []))
+        except Exception as e:
+            print(f'Could not load seen titles from Gist: {e}')
+    return set()
+
+def save_seen_titles(titles):
+    """Save used titles to GitHub Gist for persistence."""
+    github_token = os.environ.get('GITHUB_TOKEN')
+    if not github_token:
+        return
+    try:
+        data = {'titles': list(titles)[-200:]}  # keep last 200
+        resp = requests.get(
+            'https://api.github.com/gists',
+            headers={'Authorization': f'token {github_token}'},
+            params={'per_page': 10}
+        )
+        existing_gist = None
+        for gist in resp.json():
+            if gist.get('description') == 'youtube-bot-seen-titles':
+                existing_gist = gist['id']
+                break
+        gist_data = {
+            'description': 'youtube-bot-seen-titles',
+            'public': False,
+            'files': {'seen_titles.json': {'content': json.dumps(data)}}
+        }
+        if existing_gist:
+            requests.patch(
+                f'https://api.github.com/gists/{existing_gist}',
+                headers={'Authorization': f'token {github_token}'},
+                json=gist_data
+            )
+        else:
+            requests.post(
+                'https://api.github.com/gists',
+                headers={'Authorization': f'token {github_token}'},
+                json=gist_data
+            )
+        print(f'✅ Saved {len(titles)} seen titles to Gist')
+    except Exception as e:
+        print(f'Could not save seen titles: {e}')
+
+def title_hash(title):
+    return hashlib.md5(title.lower().strip()[:50].encode()).hexdigest()
+
+# ── 2. FETCH NEWS ─────────────────────────────────────────────────────────────
+def fetch_news(seen_titles):
     articles = []
     for url in RSS_FEEDS:
         try:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:5]:
+            for entry in feed.entries[:8]:
+                title = entry.get('title', '')
+                h = title_hash(title)
+                if h in seen_titles:
+                    continue  # skip duplicate!
                 articles.append({
-                    'title': entry.get('title', ''),
-                    'summary': entry.get('summary', '')[:300]
+                    'title': title,
+                    'summary': entry.get('summary', '')[:300],
+                    'hash': h
                 })
         except Exception as e:
             print(f'RSS error {url}: {e}')
-    return articles[:20]
+    # Shuffle for variety
+    random.shuffle(articles)
+    print(f'Found {len(articles)} fresh articles (duplicates filtered)')
+    return articles[:25]
 
-# ── 2. GENERATE SCRIPTS (Groq / Llama) ───────────────────────────────────────
+# ── 3. GENERATE SCRIPTS ───────────────────────────────────────────────────────
 def generate_scripts(articles):
     articles_text = '\n'.join([
         f"{i+1}. {a['title']}: {a['summary']}"
-        for i, a in enumerate(articles[:15])
+        for i, a in enumerate(articles[:20])
     ])
-    prompt = f"""You are a YouTube Shorts script writer for a finance news channel.
-Here are today's headlines:
+    prompt = f"""You are a viral YouTube Shorts script writer for a finance news channel with 1M+ subscribers.
+
+Today's headlines:
 {articles_text}
 
-Pick the {VIDEOS_PER_RUN} most engaging, viral-worthy stories.
-For each story write a YouTube Shorts script (max 150 words, ~55 seconds when spoken).
+Pick the {VIDEOS_PER_RUN} most engaging, shocking, or surprising stories.
+For each, write a YouTube Shorts script (max 150 words, ~55 seconds spoken).
 
 Rules:
-- Start with a STRONG hook that grabs attention in the first 2 seconds
-- Use simple, energetic, conversational language
-- Include 1-2 specific numbers/stats if available
-- End with exactly: "Follow for daily finance news!"
-- Make viewers feel urgency
+- Hook MUST start with a number, question, or shocking statement
+- Use "YOU", "YOUR money", make it personal
+- Include specific $ amounts or % changes when available
+- Create FOMO (fear of missing out)
+- End exactly with: "Follow for daily finance news!"
+- Conversational, energetic tone
 
-Return ONLY a valid JSON array, no markdown, no other text:
-[{{"title":"catchy YouTube title max 60 chars","script":"full script","tags":["finance","money","investing"],"search_query":"pexels video search term","emoji":"relevant emoji"}}]"""
+Return ONLY valid JSON array, no markdown:
+[{{"title":"catchy title max 60 chars","script":"full script","tags":["finance","money","investing","stocks"],"search_query":"pexels video search 2-3 words","emoji":"📈"}}]"""
 
-    headers = {
-        'Authorization': f'Bearer {GROQ_API_KEY}',
-        'Content-Type': 'application/json'
-    }
+    headers = {'Authorization': f'Bearer {GROQ_API_KEY}', 'Content-Type': 'application/json'}
     payload = json.dumps({
         "model": "llama-3.3-70b-versatile",
         "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.8
+        "temperature": 0.85
     })
     resp = requests.post('https://api.groq.com/openai/v1/chat/completions', headers=headers, data=payload)
     if resp.status_code != 200:
         raise Exception(f'Groq API error {resp.status_code}: {resp.text}')
-    result = resp.json()
-    text = result['choices'][0]['message']['content'].strip()
+    text = resp.json()['choices'][0]['message']['content'].strip()
     if '```' in text:
         parts = text.split('```')
         text = parts[1] if len(parts) > 1 else parts[0]
@@ -89,68 +170,54 @@ Return ONLY a valid JSON array, no markdown, no other text:
             text = text[4:]
     return json.loads(text.strip())
 
-# ── 3. GENERATE AUDIO ─────────────────────────────────────────────────────────
+# ── 4. GENERATE AUDIO ─────────────────────────────────────────────────────────
 async def generate_audio(script, output_path):
     communicate = edge_tts.Communicate(script, voice='en-US-GuyNeural', rate='+10%')
     await communicate.save(output_path)
 
-# ── 4. DOWNLOAD PEXELS VIDEO ──────────────────────────────────────────────────
+# ── 5. DOWNLOAD PEXELS VIDEO ──────────────────────────────────────────────────
 def download_pexels_video(query, output_path):
     headers = {'Authorization': PEXELS_API_KEY}
     url = f'https://api.pexels.com/videos/search?query={query}&orientation=portrait&per_page=15&size=medium'
     resp = requests.get(url, headers=headers)
-    data = resp.json()
-    videos = data.get('videos', [])
+    videos = resp.json().get('videos', [])
     if not videos:
         resp = requests.get(
-            'https://api.pexels.com/videos/search?query=finance&orientation=portrait&per_page=15&size=medium',
+            'https://api.pexels.com/videos/search?query=finance+business&orientation=portrait&per_page=15&size=medium',
             headers=headers
         )
         videos = resp.json().get('videos', [])
     if not videos:
-        raise Exception(f'No Pexels videos found for: {query}')
+        raise Exception(f'No Pexels videos for: {query}')
     video = random.choice(videos[:5])
-    # Prefer files with width <= 1080 to avoid FFmpeg overflow
     good_files = [f for f in video['video_files'] if f.get('width', 9999) <= 1080]
-    video_files = sorted(
-        good_files if good_files else video['video_files'],
-        key=lambda x: x.get('width', 0), reverse=True
-    )
+    video_files = sorted(good_files or video['video_files'], key=lambda x: x.get('width', 0), reverse=True)
     r = requests.get(video_files[0]['link'], stream=True)
     with open(output_path, 'wb') as f:
         for chunk in r.iter_content(chunk_size=8192):
             f.write(chunk)
 
-# ── 5. CREATE THUMBNAIL ───────────────────────────────────────────────────────
+# ── 6. CREATE THUMBNAIL ───────────────────────────────────────────────────────
 def create_thumbnail(video_path, title, emoji, output_path):
-    """Extract frame from video and add title text overlay as thumbnail."""
     try:
-        # Extract frame at 1 second
         frame_path = output_path.replace('.jpg', '_frame.jpg')
-        subprocess.run([
-            'ffmpeg', '-y', '-ss', '1', '-i', video_path,
-            '-vframes', '1', '-vf', 'scale=1280:720',
-            frame_path
-        ], check=True, capture_output=True)
-
-        # Add text overlay using ffmpeg drawtext
+        subprocess.run(
+            ['ffmpeg', '-y', '-ss', '1', '-i', video_path, '-vframes', '1', '-vf', 'scale=1280:720', frame_path],
+            check=True, capture_output=True
+        )
         safe_title = title.replace("'", "\\'").replace(":", "\\:").replace("%", "\\%")[:40]
         subprocess.run([
-            'ffmpeg', '-y', '-i', frame_path,
-            '-vf', (
-                f"drawtext=text='{safe_title}':"
-                "fontcolor=white:fontsize=48:x=(w-text_w)/2:y=h-100:"
-                "box=1:boxcolor=black@0.6:boxborderw=10"
-            ),
+            'ffmpeg', '-y', '-i', frame_path, '-vf',
+            f"drawtext=text='{safe_title}':fontcolor=white:fontsize=48:x=(w-text_w)/2:y=h-100:box=1:boxcolor=black@0.6:boxborderw=10",
             output_path
         ], check=True, capture_output=True)
         os.remove(frame_path)
         return output_path
     except Exception as e:
-        print(f'Thumbnail creation failed: {e}')
+        print(f'Thumbnail failed: {e}')
         return None
 
-# ── 6. CREATE SHORTS VIDEO ────────────────────────────────────────────────────
+# ── 7. CREATE SHORTS VIDEO ────────────────────────────────────────────────────
 def create_shorts_video(video_path, audio_path, output_path):
     result = subprocess.run(
         ['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
@@ -158,7 +225,6 @@ def create_shorts_video(video_path, audio_path, output_path):
         capture_output=True, text=True
     )
     duration = float(result.stdout.strip())
-
     cmd = [
         'ffmpeg', '-y',
         '-stream_loop', '-1', '-i', video_path,
@@ -172,12 +238,11 @@ def create_shorts_video(video_path, audio_path, output_path):
     ]
     subprocess.run(cmd, check=True)
 
-# ── 7. AUTO SAVE REFRESH TOKEN ────────────────────────────────────────────────
+# ── 8. AUTO SAVE REFRESH TOKEN ────────────────────────────────────────────────
 def save_refresh_token_to_github(new_token):
     github_token = os.environ.get('GITHUB_TOKEN')
     github_repo = os.environ.get('GITHUB_REPO')
     if not github_token or not github_repo:
-        print('WARNING: Cannot auto-save token — GITHUB_TOKEN not set')
         return
     try:
         key_resp = requests.get(
@@ -186,21 +251,18 @@ def save_refresh_token_to_github(new_token):
         )
         key_data = key_resp.json()
         from nacl import encoding, public
-        public_key = public.PublicKey(key_data['key'].encode(), encoding.Base64Encoder())
-        sealed_box = public.SealedBox(public_key)
-        encrypted = base64.b64encode(sealed_box.encrypt(new_token.encode())).decode()
+        pub_key = public.PublicKey(key_data['key'].encode(), encoding.Base64Encoder())
+        encrypted = base64.b64encode(public.SealedBox(pub_key).encrypt(new_token.encode())).decode()
         requests.put(
             f'https://api.github.com/repos/{github_repo}/actions/secrets/YOUTUBE_REFRESH_TOKEN',
             headers={'Authorization': f'token {github_token}', 'Accept': 'application/vnd.github.v3+json'},
             json={'encrypted_value': encrypted, 'key_id': key_data['key_id']}
         )
         print('✅ New refresh token saved to GitHub Secrets!')
-    except ImportError:
-        print('WARNING: PyNaCl not installed')
     except Exception as e:
         print(f'WARNING: Could not save token: {e}')
 
-# ── 8. GET YOUTUBE SERVICE ────────────────────────────────────────────────────
+# ── 9. GET YOUTUBE SERVICE ────────────────────────────────────────────────────
 def get_youtube_service():
     creds = Credentials(
         token=None, refresh_token=YOUTUBE_REFRESH_TOKEN,
@@ -210,13 +272,13 @@ def get_youtube_service():
     try:
         creds.refresh(Request())
         if creds.refresh_token and creds.refresh_token != YOUTUBE_REFRESH_TOKEN:
-            print('New refresh token received, saving to GitHub...')
+            print('New refresh token received, saving...')
             save_refresh_token_to_github(creds.refresh_token)
     except Exception as e:
         print(f'Token refresh note: {e}')
     return build('youtube', 'v3', credentials=creds)
 
-# ── 9. UPLOAD TO YOUTUBE ──────────────────────────────────────────────────────
+# ── 10. UPLOAD TO YOUTUBE ─────────────────────────────────────────────────────
 def upload_to_youtube(youtube, video_path, title, tags, thumbnail_path=None):
     description = (
         f"{title}\n\n"
@@ -226,13 +288,13 @@ def upload_to_youtube(youtube, video_path, title, tags, thumbnail_path=None):
         "📈 Stock market updates\n"
         "💰 Investing insights\n"
         "🏦 Economic analysis\n\n"
-        "#Shorts #Finance #Money #Investing #StockMarket #FinanceNews"
+        "#Shorts #Finance #Money #Investing #StockMarket #FinanceNews #WallStreet #Trading"
     )
     body = {
         'snippet': {
             'title': title,
             'description': description,
-            'tags': tags + ['shorts', 'finance', 'money', 'investing', 'stockmarket'],
+            'tags': tags + ['shorts', 'finance', 'money', 'investing', 'stockmarket', 'trading'],
             'categoryId': '25',
             'defaultLanguage': 'en',
         },
@@ -251,8 +313,6 @@ def upload_to_youtube(youtube, video_path, title, tags, thumbnail_path=None):
             print(f'  Upload {int(status.progress() * 100)}%')
     video_id = response['id']
     print(f'✅ Uploaded: https://youtube.com/shorts/{video_id}')
-
-    # Set thumbnail if available
     if thumbnail_path and os.path.exists(thumbnail_path):
         try:
             youtube.thumbnails().set(
@@ -261,22 +321,28 @@ def upload_to_youtube(youtube, video_path, title, tags, thumbnail_path=None):
             ).execute()
             print('✅ Thumbnail set!')
         except Exception as e:
-            print(f'Thumbnail upload skipped: {e}')
+            print(f'Thumbnail skipped: {e}')
     return video_id
 
-# ── 10. MAIN ──────────────────────────────────────────────────────────────────
+# ── 11. MAIN ──────────────────────────────────────────────────────────────────
 async def main():
     print('🚀 Starting YouTube Finance Shorts Bot...')
-    print('Fetching news...')
-    articles = fetch_news()
-    print(f'Found {len(articles)} articles')
 
-    print('Generating scripts with Groq (Llama)...')
+    # Load seen titles for duplicate detection
+    print('Loading seen titles for duplicate detection...')
+    seen_titles = load_seen_titles()
+    print(f'Loaded {len(seen_titles)} seen titles')
+
+    print('Fetching fresh news...')
+    articles = fetch_news(seen_titles)
+
+    print('Generating viral scripts with Groq (Llama)...')
     scripts = generate_scripts(articles)
     print(f'Generated {len(scripts)} scripts')
 
     youtube = get_youtube_service()
     success = 0
+    used_hashes = set()
 
     for i, item in enumerate(scripts):
         print(f'\n--- Video {i+1}/{len(scripts)}: {item["title"]} ---')
@@ -287,7 +353,7 @@ async def main():
                 video_out      = os.path.join(tmpdir, 'output.mp4')
                 thumbnail_path = os.path.join(tmpdir, 'thumb.jpg')
 
-                print('  😙️  Generating audio...')
+                print('  🎙️  Generating audio...')
                 await generate_audio(item['script'], audio_path)
 
                 print('  🎬  Downloading Pexels video...')
@@ -300,22 +366,26 @@ async def main():
                 create_shorts_video(video_raw, audio_path, video_out)
 
                 print('  🖼️   Creating thumbnail...')
-                thumb = create_thumbnail(
-                    video_out,
-                    item['title'],
-                    item.get('emoji', '📈'),
-                    thumbnail_path
-                )
+                thumb = create_thumbnail(video_out, item['title'], item.get('emoji', '📈'), thumbnail_path)
 
                 print('  📤  Uploading to YouTube...')
                 upload_to_youtube(youtube, video_out, item['title'], item['tags'], thumb)
                 success += 1
 
+                # Mark as seen
+                h = title_hash(item['title'])
+                seen_titles.add(h)
+                used_hashes.add(h)
+
         except Exception as e:
             print(f'  ❌ ERROR on video {i+1}: {e} — skipping!')
             continue
 
-    print(f'\n🎉 All done! {success}/{len(scripts)} videos uploaded successfully.')
+    # Save updated seen titles
+    if used_hashes:
+        save_seen_titles(seen_titles)
+
+    print(f'\n🎉 Done! {success}/{len(scripts)} videos uploaded.')
 
 if __name__ == '__main__':
     asyncio.run(main())
