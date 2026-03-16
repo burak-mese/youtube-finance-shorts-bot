@@ -6,8 +6,10 @@ import json
 import feedparser
 import tempfile
 import random
+import base64
 import edge_tts
 from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
@@ -129,12 +131,49 @@ def create_shorts_video(video_path, audio_path, script, output_path):
     ]
     subprocess.run(cmd, check=True)
 
+def save_refresh_token_to_github(new_token):
+    """Automatically save new refresh token back to GitHub Secrets."""
+    github_token = os.environ.get('GITHUB_TOKEN')
+    github_repo = os.environ.get('GITHUB_REPO')
+    if not github_token or not github_repo:
+        print('WARNING: Cannot auto-save token — GITHUB_TOKEN not set')
+        return
+    # Get public key for encryption
+    key_resp = requests.get(
+        f'https://api.github.com/repos/{github_repo}/actions/secrets/public-key',
+        headers={'Authorization': f'token {github_token}', 'Accept': 'application/vnd.github.v3+json'}
+    )
+    key_data = key_resp.json()
+    # Encrypt using libsodium via nacl
+    try:
+        from nacl import encoding, public
+        public_key = public.PublicKey(key_data['key'].encode(), encoding.Base64Encoder())
+        sealed_box = public.SealedBox(public_key)
+        encrypted = base64.b64encode(sealed_box.encrypt(new_token.encode())).decode()
+        # Update the secret
+        requests.put(
+            f'https://api.github.com/repos/{github_repo}/actions/secrets/YOUTUBE_REFRESH_TOKEN',
+            headers={'Authorization': f'token {github_token}', 'Accept': 'application/vnd.github.v3+json'},
+            json={'encrypted_value': encrypted, 'key_id': key_data['key_id']}
+        )
+        print('✅ New refresh token saved to GitHub Secrets automatically!')
+    except ImportError:
+        print('WARNING: PyNaCl not installed, cannot encrypt token')
+
 def get_youtube_service():
     creds = Credentials(
         token=None, refresh_token=YOUTUBE_REFRESH_TOKEN,
         client_id=YOUTUBE_CLIENT_ID, client_secret=YOUTUBE_CLIENT_SECRET,
         token_uri='https://oauth2.googleapis.com/token'
     )
+    # Force token refresh and save new token automatically
+    try:
+        creds.refresh(Request())
+        if creds.refresh_token and creds.refresh_token != YOUTUBE_REFRESH_TOKEN:
+            print('New refresh token received, saving to GitHub...')
+            save_refresh_token_to_github(creds.refresh_token)
+    except Exception as e:
+        print(f'Token refresh note: {e}')
     return build('youtube', 'v3', credentials=creds)
 
 def upload_to_youtube(youtube, video_path, title, tags):
@@ -183,7 +222,7 @@ async def main():
                 upload_to_youtube(youtube, video_out, item['title'], item['tags'])
                 success += 1
         except Exception as e:
-            print(f'ERROR on video {i+1}: {e} — skipping!')
+            print(f'ERROR on video {i+1}: {e} â skipping!')
             continue
     print(f'All done! {success}/{len(scripts)} videos uploaded.')
 
