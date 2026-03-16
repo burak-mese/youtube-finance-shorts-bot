@@ -42,7 +42,7 @@ def fetch_news():
 
 def generate_scripts(articles):
     genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.0-flash')
     articles_text = '\n'.join([f"{i+1}. {a['title']}: {a['summary']}" for i, a in enumerate(articles[:15])])
     prompt = f"""You are a YouTube Shorts script writer for a finance news channel.
 Here are today headlines:
