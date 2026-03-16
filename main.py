@@ -6,7 +6,6 @@ import json
 import feedparser
 import tempfile
 import random
-import urllib.request
 import edge_tts
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -51,14 +50,15 @@ Rules: Start with STRONG hook. Simple energetic language. End with: Follow for m
 Return ONLY a JSON array, no markdown, no other text:
 [{{"title":"catchy title max 60 chars","script":"full script here","tags":["finance","money","investing"],"search_query":"pexels search term"}}]"""
 
-    payload = json.dumps({"model": "llama-3.3-70b-versatile", "messages": [{"role": "user", "content": prompt}], "temperature": 0.7}).encode()
-    req = urllib.request.Request(
-        'https://api.groq.com/openai/v1/chat/completions',
-        data=payload,
-        headers={'Authorization': f'Bearer {GROQ_API_KEY}', 'Content-Type': 'application/json'}
-    )
-    with urllib.request.urlopen(req) as resp:
-        result = json.loads(resp.read())
+    headers = {
+        'Authorization': f'Bearer {GROQ_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+    payload = json.dumps({"model": "llama-3.3-70b-versatile", "messages": [{"role": "user", "content": prompt}], "temperature": 0.7})
+    resp = requests.post('https://api.groq.com/openai/v1/chat/completions', headers=headers, data=payload)
+    if resp.status_code != 200:
+        raise Exception(f'Groq API error {resp.status_code}: {resp.text}')
+    result = resp.json()
     text = result['choices'][0]['message']['content'].strip()
     if '```' in text:
         parts = text.split('```')
