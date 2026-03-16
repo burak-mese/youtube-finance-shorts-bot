@@ -24,7 +24,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install feedparser edge-tts requests google-api-python-client google-auth google-auth-oauthlib
+          pip install feedparser edge-tts requests google-api-python-client google-auth google-auth-oauthlib pynacl
 
       - name: Run bot
         env:
