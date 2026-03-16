@@ -1,0 +1,8 @@
+feedparser
+google-generativeai
+edge-tts
+requests
+google-api-python-client[YouTube]
+google-auth2
+google-auth
+google-auth-oauthlib
