@@ -1,8 +1,11 @@
-feedparser
-google-generativeai
 edge-tts
-requests
-google-api-python-client[YouTube]
-google-auth2
-google-auth
+google-api-python-client
+google-auth-httplib2
 google-auth-oauthlib
+feedparser
+requests
+moviepy==1.0.3
+whisper-timestamped
+Pillow
+numpy
+torch
