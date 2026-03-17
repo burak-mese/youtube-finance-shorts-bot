@@ -63,7 +63,7 @@ Return ONLY valid JSON array:
     headers = {'Authorization': f'Bearer {GROQ_API_KEY}', 'Content-Type': 'application/json'}
     try:
         payload = json.dumps({"model": "llama-3.1-8b-instant", "messages": [{"role": "user", "content": prompt}]})
-        resp = requests.post('[https://api.groq.com/openai/v1/chat/completions](https://api.groq.com/openai/v1/chat/completions)', headers=headers, data=payload, timeout=30)
+        resp = requests.post('https://api.groq.com/openai/v1/chat/completions', headers=headers, data=payload, timeout=30)
         text = resp.json()['choices'][0]['message']['content'].strip()
         
         # Markdown kod bloklarini guvenli temizleme
