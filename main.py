@@ -52,7 +52,7 @@ _voice_idx = [0]
 
 FONT = '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'
 
-# ── 1. DUPLICATE DETECTION ────────────────────────────────────────────────────
+# ââ 1. DUPLICATE DETECTION ââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def title_hash(title):
     return hashlib.md5(title.lower().strip()[:50].encode()).hexdigest()
 
@@ -95,7 +95,7 @@ def save_seen_titles(titles):
     except Exception as e:
         print(f'save_seen error: {e}')
 
-# ── 2. FETCH NEWS ─────────────────────────────────────────────────────────────
+# ââ 2. FETCH NEWS âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def fetch_news(seen_titles):
     articles = []
     for url in RSS_FEEDS:
@@ -116,7 +116,7 @@ def fetch_news(seen_titles):
     print(f'Found {len(articles)} fresh articles')
     return articles[:25]
 
-# ── 3. GENERATE SCRIPTS ───────────────────────────────────────────────────────
+# ââ 3. GENERATE SCRIPTS âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def generate_scripts(articles):
     txt = '\n'.join([f"{i+1}. {a['title']}: {a['summary']}"
                      for i, a in enumerate(articles[:20])])
@@ -129,19 +129,19 @@ Pick the {VIDEOS_PER_RUN} most engaging, shocking, or surprising stories.
 Write a YouTube Shorts script (max 150 words, ~55 seconds spoken).
 
 Rules:
-- Hook MUST grab attention in FIRST 2 SECONDS — shocking number, bold claim, or urgent question
+- Hook MUST grab attention in FIRST 2 SECONDS â shocking number, bold claim, or urgent question
 - Use "YOU", "YOUR money", make it personal
 - Include specific $ amounts or % changes when available
 - Create FOMO (fear of missing out)
 - End EXACTLY with this phrase word-for-word: "Follow for daily finance news!"
 - Conversational, energetic, punchy tone
 
-TITLE FORMULA: [EMOJI] [SUBJECT] [POWER WORD IN CAPS] [%/NUMBER] — [HOOK]
-Examples: "🚨 Nvidia CRASHES 16% — What's Next?" / "⚡ Stock EXPLODED 57% Overnight!" / "💰 Buffett Secret: 6000000% Gain!" / "📉 WARNING: Your Savings at Risk NOW"
+TITLE FORMULA: [EMOJI] [SUBJECT] [POWER WORD IN CAPS] [%/NUMBER] â [HOOK]
+Examples: "ð¨ Nvidia CRASHES 16% â What's Next?" / "â¡ Stock EXPLODED 57% Overnight!" / "ð° Buffett Secret: 6000000% Gain!" / "ð WARNING: Your Savings at Risk NOW"
 Power words: CRASHES EXPLODES SOARS WARNING SHOCKING URGENT SKYROCKETS
 
 Return ONLY valid JSON array, no markdown:
-[{{"title":"emoji+title max 60 chars","script":"full script","tags":["finance","money","investing","stocks"],"search_query":"pexels 2-3 words","emoji":"📈"}}]"""
+[{{"title":"emoji+title max 60 chars","script":"full script","tags":["finance","money","investing","stocks"],"search_query":"pexels 2-3 words","emoji":"ð"}}]"""
 
     headers = {'Authorization': f'Bearer {GROQ_API_KEY}', 'Content-Type': 'application/json'}
     models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']
@@ -181,7 +181,7 @@ Return ONLY valid JSON array, no markdown:
 
     raise Exception(f'Groq failed after 3 attempts: {last_error}')
 
-# ── 4. CLEAN SCRIPT FOR TTS ───────────────────────────────────────────────────
+# ââ 4. CLEAN SCRIPT FOR TTS âââââââââââââââââââââââââââââââââââââââââââââââââââ
 def clean_script_for_tts(script):
     script = re.sub(r'[\U00010000-\U0010ffff]', '', script, flags=re.UNICODE)
     script = re.sub(r'[\U00002600-\U000027BF]', '', script, flags=re.UNICODE)
@@ -192,7 +192,7 @@ def clean_script_for_tts(script):
     script = re.sub(r'\s+', ' ', script).strip()
     return script
 
-# ── 5. GENERATE AUDIO ─────────────────────────────────────────────────────────
+# ââ 5. GENERATE AUDIO âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async def generate_audio(script, output_path):
     voice, rate, pitch = VOICES[_voice_idx[0] % len(VOICES)]
     _voice_idx[0] += 1
@@ -200,7 +200,7 @@ async def generate_audio(script, output_path):
     communicate = edge_tts.Communicate(script, voice=voice, rate=rate, pitch=pitch)
     await communicate.save(output_path)
 
-# ── 6. DOWNLOAD PEXELS VIDEO ──────────────────────────────────────────────────
+# ââ 6. DOWNLOAD PEXELS VIDEO ââââââââââââââââââââââââââââââââââââââââââââââââââ
 def download_pexels_video(query, output_path):
     headers = {'Authorization': PEXELS_API_KEY}
     url = f'https://api.pexels.com/videos/search?query={query}&orientation=portrait&per_page=15&size=medium'
@@ -224,8 +224,46 @@ def download_pexels_video(query, output_path):
         for chunk in r.iter_content(chunk_size=8192):
             f.write(chunk)
 
-# ── 7. CREATE THUMBNAIL ───────────────────────────────────────────────────────
+# ââ 7. CREATE THUMBNAIL âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def create_thumbnail(video_path, title, emoji, output_path):
+    """Generate AI thumbnail via HuggingFace FLUX, fallback to FFmpeg."""
+    hf_token = os.environ.get('HF_API_TOKEN')
+    if hf_token:
+        try:
+            # Build a vivid finance-themed prompt
+            safe_title = title.replace('"', '').replace("'", '')[:60]
+            prompt = (
+                f"Professional YouTube thumbnail, finance news, dramatic lighting, "
+                f"bold text overlay space at bottom, topic: {safe_title}, "
+                f"dark background, red and gold accents, cinematic, high contrast, "
+                f"stock market charts, Wall Street aesthetic, 16:9 aspect ratio"
+            )
+            api_url = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell"
+            headers = {"Authorization": f"Bearer {hf_token}", "Content-Type": "application/json"}
+            resp = requests.post(api_url, headers=headers,
+                json={"inputs": prompt, "parameters": {"width": 1280, "height": 720, "num_inference_steps": 4}},
+                timeout=60)
+            if resp.status_code == 200 and resp.headers.get('content-type', '').startswith('image'):
+                # Save AI image
+                ai_img = output_path.replace('.jpg', '_ai.jpg')
+                with open(ai_img, 'wb') as f:
+                    f.write(resp.content)
+                # Add title text overlay with FFmpeg
+                safe = title.replace("'", "").replace('"', '').replace(':', ' ').replace('%', 'pct')[:45]
+                subprocess.run([
+                    'ffmpeg', '-y', '-i', ai_img, '-vf',
+                    f"drawtext=fontfile={FONT}:text='{safe}':fontcolor=white:fontsize=52:x=(w-text_w)/2:y=h-90:box=1:boxcolor=black@0.75:boxborderw=12",
+                    output_path
+                ], check=True, capture_output=True)
+                os.remove(ai_img)
+                print('    AI thumbnail generated!')
+                return output_path
+            else:
+                print(f'    HF thumbnail failed ({resp.status_code}), using FFmpeg fallback')
+        except Exception as e:
+            print(f'    HF thumbnail error: {e}, using FFmpeg fallback')
+
+    # FFmpeg fallback
     try:
         frame_path = output_path.replace('.jpg', '_frame.jpg')
         subprocess.run([
@@ -244,8 +282,8 @@ def create_thumbnail(video_path, title, emoji, output_path):
         print(f'Thumbnail error: {e}')
         return None
 
-# ── 8. CREATE SHORTS VIDEO ────────────────────────────────────────────────────
-def create_shorts_video(video_path, audio_path, output_path, title='', emoji='📈'):
+# ââ 8. CREATE SHORTS VIDEO ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+def create_shorts_video(video_path, audio_path, output_path, title='', emoji='ð'):
     result = subprocess.run([
         'ffprobe', '-v', 'error', '-show_entries', 'format=duration',
         '-of', 'default=noprint_wrappers=1:nokey=1', audio_path
@@ -291,7 +329,7 @@ def create_shorts_video(video_path, audio_path, output_path, title='', emoji='�
     ]
     subprocess.run(cmd, check=True)
 
-# ── 9. PLAYLIST MANAGEMENT ────────────────────────────────────────────────────
+# ââ 9. PLAYLIST MANAGEMENT ââââââââââââââââââââââââââââââââââââââââââââââââââââ
 _playlist_cache = {}
 
 def get_or_create_playlist(youtube, title, description=''):
@@ -343,16 +381,16 @@ def get_playlist_for_topic(youtube, tags):
         name = 'Daily Finance News'
     if name not in _playlist_cache:
         _playlist_cache[name] = get_or_create_playlist(
-            youtube, name, f'Daily {name} — updated every morning & evening!')
+            youtube, name, f'Daily {name} â updated every morning & evening!')
     return _playlist_cache[name]
 
-# ── 10. PINNED COMMENT ────────────────────────────────────────────────────────
+# ââ 10. PINNED COMMENT ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def post_pinned_comment(youtube, video_id):
     try:
         comment_text = (
-            "🔔 What do you think about today's market?\n"
-            "Drop a 📈 if you're BULLISH or 📉 if you're BEARISH!\n"
-            "Follow for daily finance updates — every morning & evening!"
+            "ð What do you think about today's market?\n"
+            "Drop a ð if you're BULLISH or ð if you're BEARISH!\n"
+            "Follow for daily finance updates â every morning & evening!"
         )
         resp = youtube.commentThreads().insert(
             part='snippet',
@@ -365,7 +403,7 @@ def post_pinned_comment(youtube, video_id):
     except Exception as e:
         print(f'Comment error: {e}')
 
-# ── 11. AUTO SAVE REFRESH TOKEN ───────────────────────────────────────────────
+# ââ 11. AUTO SAVE REFRESH TOKEN âââââââââââââââââââââââââââââââââââââââââââââââ
 def save_refresh_token_to_github(new_token):
     tok = os.environ.get('GITHUB_TOKEN')
     repo = os.environ.get('GITHUB_REPO')
@@ -388,7 +426,7 @@ def save_refresh_token_to_github(new_token):
     except Exception as e:
         print(f'Token save error: {e}')
 
-# ── 12. GET YOUTUBE SERVICE ───────────────────────────────────────────────────
+# ââ 12. GET YOUTUBE SERVICE âââââââââââââââââââââââââââââââââââââââââââââââââââ
 def get_youtube_service():
     creds = Credentials(
         token=None, refresh_token=YOUTUBE_REFRESH_TOKEN,
@@ -404,7 +442,7 @@ def get_youtube_service():
         print(f'Token refresh: {e}')
     return build('youtube', 'v3', credentials=creds)
 
-# ── 13. UPLOAD TO YOUTUBE ─────────────────────────────────────────────────────
+# ââ 13. UPLOAD TO YOUTUBE âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def upload_to_youtube(youtube, video_path, title, tags, thumbnail_path=None):
     title = title[:100]
     pub_date = datetime.utcnow().strftime('%B %d, %Y')
@@ -418,8 +456,8 @@ def upload_to_youtube(youtube, video_path, title, tags, thumbnail_path=None):
         f"{title}\n\n"
         f"Published: {pub_date}\n\n"
         "Stay ahead of the markets! We break down the biggest finance stories "
-        "every day in 60 seconds — fast, clear, straight to the point.\n\n"
-        "New videos every morning & evening — subscribe now!\n\n"
+        "every day in 60 seconds â fast, clear, straight to the point.\n\n"
+        "New videos every morning & evening â subscribe now!\n\n"
         "#Shorts #Finance #Money #Investing #StockMarket #FinanceNews "
         "#WallStreet #Trading #DayTrading #FinancialNews #WealthBuilding "
         "#PassiveIncome #PersonalFinance #StockTips #MarketNews"
@@ -469,7 +507,7 @@ def upload_to_youtube(youtube, video_path, title, tags, thumbnail_path=None):
 
     return video_id
 
-# ── 14. MAIN ──────────────────────────────────────────────────────────────────
+# ââ 14. MAIN ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async def main():
     print('Starting YouTube Finance Shorts Bot...')
 
@@ -478,14 +516,14 @@ async def main():
 
     articles = fetch_news(seen_titles)
     if not articles:
-        print('No fresh articles — resetting seen cache.')
+        print('No fresh articles â resetting seen cache.')
         save_seen_titles(set())
         return
 
     print('Generating scripts with Groq...')
     scripts = generate_scripts(articles)
     if not scripts:
-        print('No scripts generated — aborting.')
+        print('No scripts generated â aborting.')
         return
     print(f'Generated {len(scripts)} scripts')
 
@@ -521,14 +559,14 @@ async def main():
 
                 print('  Rendering video...')
                 create_shorts_video(video_raw, audio_path, video_out,
-                                    title=item['title'], emoji=item.get('emoji', '📈'))
+                                    title=item['title'], emoji=item.get('emoji', 'ð'))
 
                 if not os.path.exists(video_out) or os.path.getsize(video_out) < 10000:
                     raise Exception(f'Video invalid: {os.path.getsize(video_out) if os.path.exists(video_out) else "missing"}')
 
                 print('  Creating thumbnail...')
                 thumb = create_thumbnail(video_out, item['title'],
-                                         item.get('emoji', '📈'), thumbnail_path)
+                                         item.get('emoji', 'ð'), thumbnail_path)
 
                 print('  Uploading to YouTube...')
                 vid_id = upload_to_youtube(youtube, video_out, item['title'],
@@ -546,7 +584,7 @@ async def main():
                 used.add(title_hash(item['title']))
 
         except Exception as e:
-            print(f'  ERROR video {i+1}: {type(e).__name__}: {str(e)[:100]} — skipping!')
+            print(f'  ERROR video {i+1}: {type(e).__name__}: {str(e)[:100]} â skipping!')
             continue
 
     if used:
@@ -555,7 +593,7 @@ async def main():
     failed = len(scripts) - success
     print(f'\nDone! {success}/{len(scripts)} videos uploaded.')
     if failed > 0:
-        print(f'  {failed} videos failed — check logs above.')
+        print(f'  {failed} videos failed â check logs above.')
 
 if __name__ == '__main__':
     asyncio.run(main())
