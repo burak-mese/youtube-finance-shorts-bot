@@ -25,7 +25,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install feedparser edge-tts requests google-api-python-client google-auth google-auth-oauthlib pynacl
+          pip install feedparser edge-tts requests google-api-python-client google-auth google-auth-oauthlib pynacl moviepy==1.0.3 whisper-timestamped Pillow numpy torch
 
       - name: Run bot
         env:
