@@ -17,7 +17,6 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-# --- SW-AKA'DAN EKLENEN KÜTÜPHANELER ---
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import moviepy.editor as mp
@@ -38,28 +37,20 @@ RSS_FEEDS = [
     'https://www.cnbc.com/id/10000664/device/rss/rss.html',
     'https://feeds.bloomberg.com/markets/news.rss',
     'https://www.marketwatch.com/rss/topstories',
-    'https://www.investing.com/rss/news.rss',
-    'https://feeds.feedburner.com/TheStreet-MarketNews',
 ]
 
 PEXELS_QUERIES = [
     'stock market trading', 'financial charts', 'wall street',
-    'business economy', 'investment money', 'cryptocurrency bitcoin',
-    'real estate market', 'federal reserve bank'
+    'business economy', 'investment money'
 ]
 
 VOICES = [
     ('en-US-GuyNeural',    '+10%', '+0Hz'),
     ('en-US-AndrewNeural', '+8%',  '+0Hz'),
-    ('en-US-EricNeural',   '+10%', '+2Hz'),
-    ('en-US-BrianNeural',  '+8%',  '+0Hz'),
 ]
 _voice_idx = [0]
-
-# FONT AYARLARI
 FONT = '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'
 
-# ├── 1. DUPLICATE DETECTION (Senin Kodun) ──
 def title_hash(title):
     return hashlib.md5(title.lower().strip()[:50].encode()).hexdigest()
 
@@ -69,39 +60,33 @@ def load_seen_titles():
         try:
             repo = os.environ.get('GITHUB_REPO', '')
             desc = 'seen-titles-' + repo.replace('/', '-')
-            r = requests.get('https://api.github.com/gists',
-                headers={'Authorization': 'token ' + tok}, params={'per_page': 10})
-            for g in r.json():
-                if g.get('description') == desc:
-                    c = requests.get(list(g['files'].values())[0]['raw_url']).json()
-                    return set(c.get('titles', []))
-        except Exception as e:
-            print(f'load_seen error: {e}')
+            r = requests.get('https://api.github.com/gists', headers={'Authorization': 'token ' + tok}, params={'per_page': 10})
+            if r.status_code == 200 and isinstance(r.json(), list):
+                for g in r.json():
+                    if isinstance(g, dict) and g.get('description') == desc:
+                        c = requests.get(list(g['files'].values())[0]['raw_url']).json()
+                        return set(c.get('titles', []))
+        except: pass
     return set()
 
 def save_seen_titles(titles):
     tok = os.environ.get('GITHUB_TOKEN')
-    if not tok:
-        return
+    if not tok: return
     try:
         repo = os.environ.get('GITHUB_REPO', '')
         desc = 'seen-titles-' + repo.replace('/', '-')
         data = {'titles': list(titles)[-200:]}
-        r = requests.get('https://api.github.com/gists',
-            headers={'Authorization': 'token ' + tok}, params={'per_page': 10})
-        gid = next((g['id'] for g in r.json() if g.get('description') == desc), None)
-        gd = {'description': desc, 'public': False,
-              'files': {'seen.json': {'content': json.dumps(data)}}}
+        r = requests.get('https://api.github.com/gists', headers={'Authorization': 'token ' + tok}, params={'per_page': 10})
+        gid = None
+        if r.status_code == 200 and isinstance(r.json(), list):
+            gid = next((g['id'] for g in r.json() if isinstance(g, dict) and g.get('description') == desc), None)
+        gd = {'description': desc, 'public': False, 'files': {'seen.json': {'content': json.dumps(data)}}}
         if gid:
-            requests.patch(f'https://api.github.com/gists/{gid}',
-                headers={'Authorization': 'token ' + tok}, json=gd)
+            requests.patch(f'https://api.github.com/gists/{gid}', headers={'Authorization': 'token ' + tok}, json=gd)
         else:
-            requests.post('https://api.github.com/gists',
-                headers={'Authorization': 'token ' + tok}, json=gd)
-    except Exception as e:
-        print(f'save_seen error: {e}')
+            requests.post('https://api.github.com/gists', headers={'Authorization': 'token ' + tok}, json=gd)
+    except: pass
 
-# ├── 2. FETCH NEWS (Senin Kodun) ──
 def fetch_news(seen_titles):
     articles = []
     for url in RSS_FEEDS:
@@ -111,17 +96,11 @@ def fetch_news(seen_titles):
                 t = entry.get('title', '')
                 h = title_hash(t)
                 if h not in seen_titles:
-                    articles.append({
-                        'title': t,
-                        'summary': entry.get('summary', '')[:300],
-                        'hash': h
-                    })
-        except Exception as e:
-            print(f'RSS error {url}: {e}')
+                    articles.append({'title': t, 'summary': entry.get('summary', '')[:300], 'hash': h})
+        except: pass
     random.shuffle(articles)
     return articles[:25]
 
-# ├── 3. GENERATE SCRIPTS (Senin Kodun) ──
 def generate_scripts(articles):
     txt = '\n'.join([f"{i+1}. {a['title']}: {a['summary']}" for i, a in enumerate(articles[:20])])
     prompt = f"""You are a viral YouTube Shorts script writer for a finance news channel.
@@ -134,7 +113,7 @@ Rules:
 - End EXACTLY with: "Follow for daily finance news!"
 
 Return ONLY valid JSON array:
-[{{ "title":"emoji+title", "script":"full script", "tags":["finance"], "search_query":"pexels keywords", "emoji":"📈" }}]"""
+[{{ "title":"emoji+title", "script":"full script", "tags":["finance", "news"], "search_query":"pexels keywords", "emoji":"📈" }}]"""
 
     headers = {'Authorization': f'Bearer {GROQ_API_KEY}', 'Content-Type': 'application/json'}
     models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']
@@ -153,14 +132,11 @@ Return ONLY valid JSON array:
                     parsed = json.loads(text.strip())
                     if isinstance(parsed, dict): parsed = [parsed]
                     if isinstance(parsed, list) and len(parsed) > 0: return parsed
-                except:
-                    pass
-        except:
-            pass
+                except: pass
+        except: pass
         time.sleep(2)
     raise Exception('Groq failed after 3 attempts')
 
-# ├── 4. CLEAN & GENERATE AUDIO (Senin Kodun) ──
 def clean_script_for_tts(script):
     script = re.sub(r'[\U00010000-\U0010ffff]', '', script, flags=re.UNICODE)
     script = re.sub(r'[*_#~|]', '', script)
@@ -173,7 +149,6 @@ async def generate_audio(script, output_path):
     communicate = edge_tts.Communicate(script, voice=voice, rate=rate, pitch=pitch)
     await communicate.save(output_path)
 
-# ├── 5. DOWNLOAD PEXELS VIDEO (Senin Kodun) ──
 def _fetch_one_pexels_video(query, output_path, used_ids=None):
     headers = {'Authorization': PEXELS_API_KEY}
     used_ids = used_ids or set()
@@ -190,8 +165,7 @@ def _fetch_one_pexels_video(query, output_path, used_ids=None):
                 with open(output_path, 'wb') as f:
                     for chunk in r.iter_content(chunk_size=8192): f.write(chunk)
                 return video['id']
-        except:
-            continue
+        except: continue
     raise Exception(f'Could not fetch Pexels video for: {query}')
 
 def download_pexels_multi(query, tmpdir, count=3):
@@ -223,89 +197,55 @@ def concat_videos(clip_paths, output_path, target_duration):
     ], check=True, capture_output=True)
     os.remove(list_file)
 
-# ├── 6. SW-AKA: METIN GÖRSELİ OLUŞTURMA (PIL Yöntemi) ──
 def create_text_image(text, font_path, font_size, max_width):
-    """Metni kenarlıklı (stroke) bir resme çevirir. MoviePy ImageMagick hatasını engeller."""
     image = Image.new("RGBA", (max_width, int(font_size * 2.5)), (0, 0, 0, 0))
-    try:
-        font = ImageFont.truetype(font_path, font_size)
-    except:
-        font = ImageFont.load_default() # Font bulunamazsa çökmesin
+    try: font = ImageFont.truetype(font_path, font_size)
+    except: font = ImageFont.load_default()
     draw = ImageDraw.Draw(image)
-    
-    # Metin boyutunu hesapla
     bbox = draw.textbbox((0, 0), text, font=font)
     text_w = bbox[2] - bbox[0]
     text_h = bbox[3] - bbox[1]
-    
     x = (max_width - text_w) / 2
     y = (font_size * 2.5 - text_h) / 2
-    
-    # Metni siyah kenarlık ve sarı/beyaz dolgu ile çiz
     draw.text((x, y), text, font=font, fill="yellow", stroke_width=6, stroke_fill="black")
     return np.array(image)
 
-# ├── 7. SW-AKA: MOVIEPY VE WHISPER İLE DİNAMİK VİDEO KURGUSU ──
 def create_shorts_video_with_ai(video_path, audio_path, output_path, title):
     print("      -> Sesi Whisper ile analiz ediliyor...")
-    
-    # 1. Whisper ile Ses Analizi (Tiny model CI/CD için çok hızlıdır ve az RAM yer)
     loaded_audio = whisper.load_audio(audio_path)
     model = whisper.load_model("tiny.en", device="cpu")
     result = whisper.transcribe(model, loaded_audio, language="en")
     
     print("      -> MoviePy ile kelimeler videoya ekleniyor...")
-    # 2. MoviePy ile Arka Plan ve Sesi Yükle
     audio_clip = mp.AudioFileClip(audio_path)
     bg_clip = mp.VideoFileClip(video_path)
     
-    # Arka planı sesin uzunluğuna kırp ve sesi ekle
     bg_clip = bg_clip.subclip(0, audio_clip.duration)
     bg_clip = bg_clip.set_audio(audio_clip)
 
-    # 3. Altyazı Kliplerini Oluştur (Word-by-word)
     text_clips = []
-    
-    # Üstteki sabit başlık (İsteğe bağlı)
     safe_title = title.replace("'", "").replace('"', '')[:35].upper()
     title_array = create_text_image(f"FINANCE NEWS\n{safe_title}", FONT, 60, 1080)
     title_clip = mp.ImageClip(title_array).set_duration(audio_clip.duration).set_position(('center', 150))
     text_clips.append(title_clip)
 
-    # Kelime kelime hareketli altyazılar
     for segment in result['segments']:
         for word_info in segment['words']:
             start = word_info['start']
             end = word_info['end']
             text = word_info['text'].strip().upper()
-            
-            # Kelime çok kısa kalmasın diye minimum 0.2s süre ver
             if end - start < 0.2: end = start + 0.2
-            
-            # PIL ile metni çiz, ImageClip yap, tam ortada göster
             txt_array = create_text_image(text, FONT, 90, 1080)
             txt_clip = mp.ImageClip(txt_array).set_start(start).set_end(end).set_position(('center', 'center'))
             text_clips.append(txt_clip)
 
-    # 4. Hepsini Birleştir ve Dışa Aktar
     final_clip = mp.CompositeVideoClip([bg_clip] + text_clips)
-    
-    # Render işlemi (Preset fast ile GitHub Actions'da makul sürede biter)
-    final_clip.write_videofile(
-        output_path, 
-        fps=30, 
-        codec="libx264", 
-        audio_codec="aac", 
-        preset="fast", 
-        threads=4, 
-        logger=None # Log kirliliğini engeller
-    )
+    final_clip.write_videofile(output_path, fps=30, codec="libx264", audio_codec="aac", preset="fast", threads=4, logger=None)
     
     bg_clip.close()
     audio_clip.close()
     final_clip.close()
 
-# ├── 8. YOUTUBE İŞLEMLERİ (Senin Kodun - Özetlendi) ──
 def get_youtube_service():
     creds = Credentials(token=None, refresh_token=YOUTUBE_REFRESH_TOKEN, client_id=YOUTUBE_CLIENT_ID, client_secret=YOUTUBE_CLIENT_SECRET, token_uri='https://oauth2.googleapis.com/token')
     creds.refresh(Request())
@@ -322,7 +262,6 @@ def upload_to_youtube(youtube, video_path, title, tags):
     while response is None: status, response = request.next_chunk()
     return response['id']
 
-# ├── 9. MAIN LOOP ──
 async def main():
     print('Starting Upgraded YouTube Finance Shorts Bot...')
     seen_titles = load_seen_titles()
@@ -334,32 +273,34 @@ async def main():
     success = 0
 
     for i, item in enumerate(scripts):
-        print(f'\n--- Video {i+1}/{len(scripts)}: {item["title"]} ---')
+        print(f'\n--- Video {i+1}/{len(scripts)}: {item.get("title", "Finance Shorts")} ---')
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
                 audio_path = os.path.join(tmpdir, 'audio.mp3')
                 video_raw = os.path.join(tmpdir, 'raw.mp4')
                 video_out = os.path.join(tmpdir, 'output.mp4')
 
-                item['script'] = clean_script_for_tts(item['script'])
+                item['script'] = clean_script_for_tts(item.get('script', 'Welcome to finance news.'))
                 
                 print('  1. Ses Oluşturuluyor...')
                 await generate_audio(item['script'], audio_path)
 
                 print('  2. Pexels Videoları İndiriliyor...')
                 video_clips = download_pexels_multi(item.get('search_query', 'finance'), tmpdir, count=3)
-                
-                # Önce Pexels kliplerini arka arkaya birleştirip tek video yapıyoruz
-                concat_videos(video_clips, video_raw, 60) # Maks 60 saniye
+                concat_videos(video_clips, video_raw, 60)
                 
                 print('  3. Yapay Zeka Kurgu ve Altyazı Başlıyor...')
-                create_shorts_video_with_ai(video_raw, audio_path, video_out, item['title'])
+                create_shorts_video_with_ai(video_raw, audio_path, video_out, item.get('title', 'Finance News'))
 
                 print('  4. YouTube\'a Yükleniyor...')
-                upload_to_youtube(youtube, video_out, item['title'], item['tags'])
+                
+                # İŞTE BURASI HAYAT KURTARAN YER: '.get' ile hata almayı engelliyoruz!
+                safe_tags = item.get('tags', ['finance', 'news', 'money'])
+                
+                upload_to_youtube(youtube, video_out, item.get('title', 'Finance News'), safe_tags)
 
                 success += 1
-                seen_titles.add(title_hash(item['title']))
+                seen_titles.add(title_hash(item.get('title', '')))
 
         except Exception as e:
             print(f'  HATA: {e}')
