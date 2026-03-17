@@ -52,7 +52,7 @@ _voice_idx = [0]
 
 FONT = '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'
 
-# ââ 1. DUPLICATE DETECTION ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂ 1. DUPLICATE DETECTION Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 def title_hash(title):
     return hashlib.md5(title.lower().strip()[:50].encode()).hexdigest()
 
@@ -95,7 +95,7 @@ def save_seen_titles(titles):
     except Exception as e:
         print(f'save_seen error: {e}')
 
-# ââ 2. FETCH NEWS âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂ 2. FETCH NEWS Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 def fetch_news(seen_titles):
     articles = []
     for url in RSS_FEEDS:
@@ -116,7 +116,7 @@ def fetch_news(seen_titles):
     print(f'Found {len(articles)} fresh articles')
     return articles[:25]
 
-# ââ 3. GENERATE SCRIPTS âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂ 3. GENERATE SCRIPTS Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 def generate_scripts(articles):
     txt = '\n'.join([f"{i+1}. {a['title']}: {a['summary']}"
                      for i, a in enumerate(articles[:20])])
@@ -129,19 +129,19 @@ Pick the {VIDEOS_PER_RUN} most engaging, shocking, or surprising stories.
 Write a YouTube Shorts script (max 150 words, ~55 seconds spoken).
 
 Rules:
-- Hook MUST grab attention in FIRST 2 SECONDS â shocking number, bold claim, or urgent question
+- Hook MUST grab attention in FIRST 2 SECONDS Ã¢ÂÂ shocking number, bold claim, or urgent question
 - Use "YOU", "YOUR money", make it personal
 - Include specific $ amounts or % changes when available
 - Create FOMO (fear of missing out)
 - End EXACTLY with this phrase word-for-word: "Follow for daily finance news!"
 - Conversational, energetic, punchy tone
 
-TITLE FORMULA: [EMOJI] [SUBJECT] [POWER WORD IN CAPS] [%/NUMBER] â [HOOK]
-Examples: "ð¨ Nvidia CRASHES 16% â What's Next?" / "â¡ Stock EXPLODED 57% Overnight!" / "ð° Buffett Secret: 6000000% Gain!" / "ð WARNING: Your Savings at Risk NOW"
+TITLE FORMULA: [EMOJI] [SUBJECT] [POWER WORD IN CAPS] [%/NUMBER] Ã¢ÂÂ [HOOK]
+Examples: "Ã°ÂÂÂ¨ Nvidia CRASHES 16% Ã¢ÂÂ What's Next?" / "Ã¢ÂÂ¡ Stock EXPLODED 57% Overnight!" / "Ã°ÂÂÂ° Buffett Secret: 6000000% Gain!" / "Ã°ÂÂÂ WARNING: Your Savings at Risk NOW"
 Power words: CRASHES EXPLODES SOARS WARNING SHOCKING URGENT SKYROCKETS
 
 Return ONLY valid JSON array, no markdown:
-[{{"title":"emoji+title max 60 chars","script":"full script","tags":["finance","money","investing","stocks"],"search_query":"pexels 2-3 words","emoji":"ð"}}]"""
+[{{"title":"emoji+title max 60 chars","script":"full script","tags":["finance","money","investing","stocks"],"search_query":"pexels 2-3 words","emoji":"Ã°ÂÂÂ"}}]"""
 
     headers = {'Authorization': f'Bearer {GROQ_API_KEY}', 'Content-Type': 'application/json'}
     models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']
@@ -181,7 +181,7 @@ Return ONLY valid JSON array, no markdown:
 
     raise Exception(f'Groq failed after 3 attempts: {last_error}')
 
-# ââ 4. CLEAN SCRIPT FOR TTS âââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂ 4. CLEAN SCRIPT FOR TTS Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 def clean_script_for_tts(script):
     script = re.sub(r'[\U00010000-\U0010ffff]', '', script, flags=re.UNICODE)
     script = re.sub(r'[\U00002600-\U000027BF]', '', script, flags=re.UNICODE)
@@ -192,7 +192,7 @@ def clean_script_for_tts(script):
     script = re.sub(r'\s+', ' ', script).strip()
     return script
 
-# ââ 5. GENERATE AUDIO âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂ 5. GENERATE AUDIO Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 async def generate_audio(script, output_path):
     voice, rate, pitch = VOICES[_voice_idx[0] % len(VOICES)]
     _voice_idx[0] += 1
@@ -200,31 +200,84 @@ async def generate_audio(script, output_path):
     communicate = edge_tts.Communicate(script, voice=voice, rate=rate, pitch=pitch)
     await communicate.save(output_path)
 
-# ââ 6. DOWNLOAD PEXELS VIDEO ââââââââââââââââââââââââââââââââââââââââââââââââââ
-def download_pexels_video(query, output_path):
+# Ã¢ÂÂÃ¢ÂÂ 6. DOWNLOAD PEXELS VIDEO Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+def _fetch_one_pexels_video(query, output_path, used_ids=None):
+    """Download a single Pexels portrait video, avoiding already-used IDs."""
     headers = {'Authorization': PEXELS_API_KEY}
-    url = f'https://api.pexels.com/videos/search?query={query}&orientation=portrait&per_page=15&size=medium'
-    resp = requests.get(url, headers=headers)
-    videos = resp.json().get('videos', [])
-    if not videos:
-        resp = requests.get(
-            'https://api.pexels.com/videos/search?query=business+finance&orientation=portrait&per_page=15&size=medium',
-            headers=headers)
-        videos = resp.json().get('videos', [])
-    if not videos:
-        raise Exception(f'No Pexels videos for: {query}')
-    # Filter short videos (< 10s)
-    long_videos = [v for v in videos if v.get('duration', 999) >= 10] or videos
-    video = random.choice(long_videos[:5])
-    good_files = [f for f in video['video_files'] if f.get('width', 9999) <= 1080]
-    video_files = sorted(good_files or video['video_files'],
-                         key=lambda x: x.get('width', 0), reverse=True)
-    r = requests.get(video_files[0]['link'], stream=True)
-    with open(output_path, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=8192):
-            f.write(chunk)
+    used_ids = used_ids or set()
+    for q in [query, 'business finance', 'stock market trading']:
+        try:
+            url = f'https://api.pexels.com/videos/search?query={q}&orientation=portrait&per_page=15&size=medium'
+            resp = requests.get(url, headers=headers, timeout=15)
+            videos = resp.json().get('videos', [])
+            # Filter: min 10s, not already used
+            candidates = [v for v in videos
+                          if v.get('duration', 0) >= 10 and v['id'] not in used_ids]
+            if candidates:
+                video = random.choice(candidates[:5])
+                good = [f for f in video['video_files'] if f.get('width', 9999) <= 1080]
+                files = sorted(good or video['video_files'], key=lambda x: x.get('width', 0), reverse=True)
+                r = requests.get(files[0]['link'], stream=True, timeout=30)
+                with open(output_path, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                return video['id']
+        except Exception as e:
+            print(f'    Pexels fetch error ({q}): {e}')
+    raise Exception(f'Could not fetch Pexels video for: {query}')
 
-# ââ 7. CREATE THUMBNAIL âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+def download_pexels_video(query, output_path):
+    """Download a single Pexels video (kept for compatibility)."""
+    _fetch_one_pexels_video(query, output_path)
+
+def download_pexels_multi(query, tmpdir, count=3):
+    """Download multiple different Pexels videos and concat them into one."""
+    import tempfile as _tf
+    paths = []
+    used_ids = set()
+    # Use varied queries for visual diversity
+    base_queries = [query, random.choice(PEXELS_QUERIES), random.choice(PEXELS_QUERIES)]
+    for i in range(count):
+        q = base_queries[i % len(base_queries)]
+        p = os.path.join(tmpdir, f'clip_{i}.mp4')
+        try:
+            vid_id = _fetch_one_pexels_video(q, p, used_ids)
+            used_ids.add(vid_id)
+            paths.append(p)
+            print(f'    Clip {i+1}/{count} downloaded')
+        except Exception as e:
+            print(f'    Clip {i+1} failed: {e}')
+    if not paths:
+        raise Exception('No Pexels clips downloaded!')
+    return paths
+
+def concat_videos(clip_paths, output_path, target_duration):
+    """Concat multiple clips using FFmpeg, loop to fill target duration."""
+    if len(clip_paths) == 1:
+        # Single clip — just copy it
+        import shutil
+        shutil.copy(clip_paths[0], output_path)
+        return
+    # Write concat list
+    list_file = output_path + '_list.txt'
+    # Repeat clips enough times to cover duration
+    repeats = max(1, int(target_duration / (len(clip_paths) * 8)) + 1)
+    with open(list_file, 'w') as f:
+        for _ in range(repeats):
+            for p in clip_paths:
+                f.write(f"file '{p}'\n")
+    subprocess.run([
+        'ffmpeg', '-y', '-f', 'concat', '-safe', '0',
+        '-i', list_file,
+        '-vf', 'scale=1080:1920',
+        '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+        '-pix_fmt', 'yuv420p', '-r', '30',
+        '-t', str(target_duration),
+        output_path
+    ], check=True, capture_output=True)
+    os.remove(list_file)
+
+# Ã¢ÂÂÃ¢ÂÂ 7. CREATE THUMBNAIL Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 def create_thumbnail(video_path, title, emoji, output_path):
     """Generate AI thumbnail via HuggingFace FLUX, fallback to FFmpeg."""
     hf_token = os.environ.get('HF_API_TOKEN')
@@ -282,13 +335,21 @@ def create_thumbnail(video_path, title, emoji, output_path):
         print(f'Thumbnail error: {e}')
         return None
 
-# ââ 8. CREATE SHORTS VIDEO ââââââââââââââââââââââââââââââââââââââââââââââââââââ
-def create_shorts_video(video_path, audio_path, output_path, title='', emoji='ð'):
+# Ã¢ÂÂÃ¢ÂÂ 8. CREATE SHORTS VIDEO Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+def create_shorts_video(video_path, audio_path, output_path, title='', emoji='Ã°ÂÂÂ'):
     result = subprocess.run([
         'ffprobe', '-v', 'error', '-show_entries', 'format=duration',
         '-of', 'default=noprint_wrappers=1:nokey=1', audio_path
     ], capture_output=True, text=True)
     duration = float(result.stdout.strip())
+
+    # Handle multi-clip: concat clips first, then use as single video
+    if isinstance(video_path, list):
+        tmp_concat = output_path + '_concat.mp4'
+        concat_videos(video_path, tmp_concat, duration)
+        video_path = tmp_concat
+    else:
+        tmp_concat = None
 
     safe = title.replace("'", "").replace('"', '').replace(':', ' ').replace('%', 'pct')[:35].upper()
     words = safe.split()
@@ -329,7 +390,12 @@ def create_shorts_video(video_path, audio_path, output_path, title='', emoji='ð
     ]
     subprocess.run(cmd, check=True)
 
-# ââ 9. PLAYLIST MANAGEMENT ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    # Clean up temp concat if it was created
+    if tmp_concat and os.path.exists(tmp_concat):
+        try: os.remove(tmp_concat)
+        except: pass
+
+# Ã¢ÂÂÃ¢ÂÂ 9. PLAYLIST MANAGEMENT Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 _playlist_cache = {}
 
 def get_or_create_playlist(youtube, title, description=''):
@@ -381,16 +447,16 @@ def get_playlist_for_topic(youtube, tags):
         name = 'Daily Finance News'
     if name not in _playlist_cache:
         _playlist_cache[name] = get_or_create_playlist(
-            youtube, name, f'Daily {name} â updated every morning & evening!')
+            youtube, name, f'Daily {name} Ã¢ÂÂ updated every morning & evening!')
     return _playlist_cache[name]
 
-# ââ 10. PINNED COMMENT ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂ 10. PINNED COMMENT Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 def post_pinned_comment(youtube, video_id):
     try:
         comment_text = (
-            "ð What do you think about today's market?\n"
-            "Drop a ð if you're BULLISH or ð if you're BEARISH!\n"
-            "Follow for daily finance updates â every morning & evening!"
+            "Ã°ÂÂÂ What do you think about today's market?\n"
+            "Drop a Ã°ÂÂÂ if you're BULLISH or Ã°ÂÂÂ if you're BEARISH!\n"
+            "Follow for daily finance updates Ã¢ÂÂ every morning & evening!"
         )
         resp = youtube.commentThreads().insert(
             part='snippet',
@@ -403,7 +469,7 @@ def post_pinned_comment(youtube, video_id):
     except Exception as e:
         print(f'Comment error: {e}')
 
-# ââ 11. AUTO SAVE REFRESH TOKEN âââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂ 11. AUTO SAVE REFRESH TOKEN Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 def save_refresh_token_to_github(new_token):
     tok = os.environ.get('GITHUB_TOKEN')
     repo = os.environ.get('GITHUB_REPO')
@@ -426,7 +492,7 @@ def save_refresh_token_to_github(new_token):
     except Exception as e:
         print(f'Token save error: {e}')
 
-# ââ 12. GET YOUTUBE SERVICE âââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂ 12. GET YOUTUBE SERVICE Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 def get_youtube_service():
     creds = Credentials(
         token=None, refresh_token=YOUTUBE_REFRESH_TOKEN,
@@ -442,7 +508,7 @@ def get_youtube_service():
         print(f'Token refresh: {e}')
     return build('youtube', 'v3', credentials=creds)
 
-# ââ 13. UPLOAD TO YOUTUBE âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂ 13. UPLOAD TO YOUTUBE Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 def upload_to_youtube(youtube, video_path, title, tags, thumbnail_path=None):
     title = title[:100]
     pub_date = datetime.utcnow().strftime('%B %d, %Y')
@@ -456,8 +522,8 @@ def upload_to_youtube(youtube, video_path, title, tags, thumbnail_path=None):
         f"{title}\n\n"
         f"Published: {pub_date}\n\n"
         "Stay ahead of the markets! We break down the biggest finance stories "
-        "every day in 60 seconds â fast, clear, straight to the point.\n\n"
-        "New videos every morning & evening â subscribe now!\n\n"
+        "every day in 60 seconds Ã¢ÂÂ fast, clear, straight to the point.\n\n"
+        "New videos every morning & evening Ã¢ÂÂ subscribe now!\n\n"
         "#Shorts #Finance #Money #Investing #StockMarket #FinanceNews "
         "#WallStreet #Trading #DayTrading #FinancialNews #WealthBuilding "
         "#PassiveIncome #PersonalFinance #StockTips #MarketNews"
@@ -507,7 +573,7 @@ def upload_to_youtube(youtube, video_path, title, tags, thumbnail_path=None):
 
     return video_id
 
-# ââ 14. MAIN ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# Ã¢ÂÂÃ¢ÂÂ 14. MAIN Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 async def main():
     print('Starting YouTube Finance Shorts Bot...')
 
@@ -516,14 +582,14 @@ async def main():
 
     articles = fetch_news(seen_titles)
     if not articles:
-        print('No fresh articles â resetting seen cache.')
+        print('No fresh articles Ã¢ÂÂ resetting seen cache.')
         save_seen_titles(set())
         return
 
     print('Generating scripts with Groq...')
     scripts = generate_scripts(articles)
     if not scripts:
-        print('No scripts generated â aborting.')
+        print('No scripts generated Ã¢ÂÂ aborting.')
         return
     print(f'Generated {len(scripts)} scripts')
 
@@ -559,14 +625,14 @@ async def main():
 
                 print('  Rendering video...')
                 create_shorts_video(video_raw, audio_path, video_out,
-                                    title=item['title'], emoji=item.get('emoji', 'ð'))
+                                    title=item['title'], emoji=item.get('emoji', 'Ã°ÂÂÂ'))
 
                 if not os.path.exists(video_out) or os.path.getsize(video_out) < 10000:
                     raise Exception(f'Video invalid: {os.path.getsize(video_out) if os.path.exists(video_out) else "missing"}')
 
                 print('  Creating thumbnail...')
                 thumb = create_thumbnail(video_out, item['title'],
-                                         item.get('emoji', 'ð'), thumbnail_path)
+                                         item.get('emoji', 'Ã°ÂÂÂ'), thumbnail_path)
 
                 print('  Uploading to YouTube...')
                 vid_id = upload_to_youtube(youtube, video_out, item['title'],
@@ -584,7 +650,7 @@ async def main():
                 used.add(title_hash(item['title']))
 
         except Exception as e:
-            print(f'  ERROR video {i+1}: {type(e).__name__}: {str(e)[:100]} â skipping!')
+            print(f'  ERROR video {i+1}: {type(e).__name__}: {str(e)[:100]} Ã¢ÂÂ skipping!')
             continue
 
     if used:
@@ -593,7 +659,7 @@ async def main():
     failed = len(scripts) - success
     print(f'\nDone! {success}/{len(scripts)} videos uploaded.')
     if failed > 0:
-        print(f'  {failed} videos failed â check logs above.')
+        print(f'  {failed} videos failed Ã¢ÂÂ check logs above.')
 
 if __name__ == '__main__':
     asyncio.run(main())
