@@ -36,4 +36,5 @@ jobs:
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
+          HF_API_TOKEN: ${{ secrets.HF_API_TOKEN }}
         run: python main.py
