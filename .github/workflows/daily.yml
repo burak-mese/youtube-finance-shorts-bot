@@ -25,16 +25,13 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install feedparser edge-tts requests google-api-python-client google-auth google-auth-oauthlib pynacl moviepy==1.0.3 whisper-timestamped Pillow numpy torch
+          pip install feedparser edge-tts requests pynacl moviepy==1.0.3 whisper-timestamped Pillow numpy torch
 
       - name: Run bot
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
-          HF_API_TOKEN: ${{ secrets.HF_API_TOKEN }}
         run: python main.py
