@@ -85,10 +85,18 @@ Return ONLY valid JSON array:
         
         content = resp.json()['choices'][0]['message']['content'].strip()
         
-        # Gelişmiş JSON Ayıklama (Regex ile AI'nın eklediği yorumları ayıklarız)
-        match = re.search(r'\[\s*{.*}\s*\]', content, re.DOTALL)
+        # Gelişmiş JSON Ayıklama ve Tamir (Regex)
+        # Köşeli parantezler arasındaki her şeyi alıyoruz
+        match = re.search(r'\[\s*\{.*\}\s*\]', content, re.DOTALL)
         if match:
             clean_json = match.group(0)
+            
+            # AI bazen objeler arasına virgül koymayı unutur, zorla düzeltelim
+            clean_json = re.sub(r'\}\s*\{', '}, {', clean_json)
+            
+            # Sonda kalan hatalı virgülleri temizleyelim
+            clean_json = re.sub(r',\s*\]', ']', clean_json)
+            
             return json.loads(clean_json, strict=False)
         else:
             print("   ! AI düzgün bir JSON formatı döndürmedi. Ham cevap inceleniyor...")
