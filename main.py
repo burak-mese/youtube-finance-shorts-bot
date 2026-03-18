@@ -69,7 +69,7 @@ Return ONLY valid JSON array:
         # Groq ne yazarsa yazsin sadece JSON kismini zorla cekip alir
         match = re.search(r'\[.*\]', text, re.DOTALL)
         if match:
-            return json.loads(match.group(0))
+           return json.loads(match.group(0), strict=False)
         return []
     except Exception as e:
         print("Groq Hatasi:", e)
