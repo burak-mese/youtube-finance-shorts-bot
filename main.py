@@ -217,7 +217,7 @@ def send_to_telegram(video_path, title, description, tags):
     
     caption = (f"🎬 <b>{title}</b>\n\n"
                f"{description}\n\n"
-               f"Takip et: @FinanceFlashDaily\n\n"
+               f"Follow: @FinanceFlashDaily\n\n"
                f"{tag_str} #Shorts")
     
     try:
@@ -272,8 +272,8 @@ async def main():
                 print("  4. Telegrama gönderiliyor...")
                 send_to_telegram(
                     video_out, 
-                    item.get('title', 'Finans Haberi'), 
-                    item.get('description', 'Güncel finans gelişmelerini kaçırmayın.'),
+                    item.get('title', 'Finance News'), 
+                    item.get('description', "Don't miss out on the latest finance developments."),
                     item.get('tags', ['finance', 'news'])
                 )
 
