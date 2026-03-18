@@ -23,9 +23,9 @@ TELEGRAM_CHAT_ID   = os.environ.get('TELEGRAM_CHAT_ID')
 VIDEOS_PER_RUN = 2 # Telegram'i spamlamamak icin tek calismada 2 video uretir.
 
 RSS_FEEDS = [
-    '[https://feeds.reuters.com/reuters/businessNews](https://feeds.reuters.com/reuters/businessNews)',
-    '[https://finance.yahoo.com/news/rssindex](https://finance.yahoo.com/news/rssindex)',
-    '[https://feeds.bloomberg.com/markets/news.rss](https://feeds.bloomberg.com/markets/news.rss)',
+    'https://feeds.reuters.com/reuters/businessNews',
+    'https://finance.yahoo.com/news/rssindex',
+    'https://feeds.bloomberg.com/markets/news.rss',
 ]
 
 VOICES = [
@@ -66,14 +66,11 @@ Return ONLY valid JSON array:
         resp = requests.post('https://api.groq.com/openai/v1/chat/completions', headers=headers, data=payload, timeout=30)
         text = resp.json()['choices'][0]['message']['content'].strip()
         
-        # Markdown kod bloklarini guvenli temizleme
-        if '```' in text:
-            parts = text.split('```')
-            text = parts[1] if len(parts) > 1 else parts[0]
-        if text.startswith('json'): 
-            text = text[4:]
-            
-        return json.loads(text.strip())
+        # Groq ne yazarsa yazsin sadece JSON kismini zorla cekip alir
+        match = re.search(r'\[.*\]', text, re.DOTALL)
+        if match:
+            return json.loads(match.group(0))
+        return []
     except Exception as e:
         print("Groq Hatasi:", e)
         return []
@@ -151,8 +148,7 @@ def create_shorts_video(video_path, audio_path, output_path, title):
     final_clip.close()
 
 def send_to_telegram(video_path, title, tags):
-    url = f"[https://api.telegram.org/bot](https://api.telegram.org/bot){TELEGRAM_BOT_TOKEN}/sendVideo"
-    tag_str = " ".join([f"#{t.replace(' ', '')}" for t in tags])
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendVideo"    tag_str = " ".join([f"#{t.replace(' ', '')}" for t in tags])
     caption = f"🎬 <b>YENI VIDEO HAZIR PATRON!</b>\n\n<b>Baslik:</b> {title}\n\n<b>Aciklama:</b>\n{title}\n\nSubscribe to @FinanceFlashDaily for daily finance news! {tag_str} #Shorts #Finance\n\n<i>Videoyu indirip YouTube'a trend muzik ekleyerek yukleyebilirsin!</i>"
     
     with open(video_path, 'rb') as video:
