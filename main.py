@@ -148,7 +148,8 @@ def create_shorts_video(video_path, audio_path, output_path, title):
     final_clip.close()
 
 def send_to_telegram(video_path, title, tags):
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendVideo"    tag_str = " ".join([f"#{t.replace(' ', '')}" for t in tags])
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendVideo"
+    tag_str = " ".join([f"#{t.replace(' ', '')}" for t in tags])
     caption = f"🎬 <b>YENI VIDEO HAZIR PATRON!</b>\n\n<b>Baslik:</b> {title}\n\n<b>Aciklama:</b>\n{title}\n\nSubscribe to @FinanceFlashDaily for daily finance news! {tag_str} #Shorts #Finance\n\n<i>Videoyu indirip YouTube'a trend muzik ekleyerek yukleyebilirsin!</i>"
     
     with open(video_path, 'rb') as video:
