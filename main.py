@@ -99,17 +99,24 @@ Return ONLY valid JSON array:
             try:
                 return json.loads(clean_json, strict=False)
             except json.JSONDecodeError:
-                # Son çare: Regex ile objeleri tek tek çekmeyi dene
                 print("   ! Standart JSON okuma başarısız, gelişmiş ayıklama deneniyor...")
+                # Regex ile objeleri tek tek çekmeyi dene
                 objects = re.findall(r'\{.*?\}', clean_json, re.DOTALL)
                 results = []
                 for obj_str in objects:
                     try:
                         results.append(json.loads(obj_str, strict=False))
                     except: continue
+                
+                if not results:
+                    print("   ! AI Cevabı kurtarılamadı. Ham metin:")
+                    print("-" * 30)
+                    print(content)
+                    print("-" * 30)
                 return results
         else:
-            print("   ! AI düzgün bir JSON formatı döndürmedi.")
+            print("   ! AI geçerli bir JSON listesi döndürmedi. Ham metin:")
+            print(content)
             return []
     except Exception as e:
         print(f"   ! Groq İletişim Hatası: {e}")
@@ -254,6 +261,7 @@ async def main():
 
     scripts = generate_scripts(articles)
     if not scripts:
+        print("HATA: Hiçbir geçerli senaryo üretilemedi. Durduruluyor.")
         return
 
     for i, item in enumerate(scripts):
@@ -264,11 +272,13 @@ async def main():
                 video_raw  = os.path.join(tmpdir, 'r.mp4')
                 video_out  = os.path.join(tmpdir, 'f.mp4')
 
+                print("  1. Ses dosyası oluşturuluyor...")
                 await generate_audio(clean_script_for_tts(item.get('script', '')), audio_path)
                 
-                # Ses süresi tespiti
-                import mutagen.mp3
-                a_dur = mutagen.mp3.MP3(audio_path).info.length
+                # Ses süresi tespiti (Daha güvenilir moviepy yöntemi)
+                audio_clip_temp = mp.AudioFileClip(audio_path)
+                a_dur = audio_clip_temp.duration
+                audio_clip_temp.close()
                 
                 extract_random_background(a_dur + 0.5, video_raw)
                 create_shorts_video(video_raw, audio_path, video_out, item.get('title', 'NEWS'))
