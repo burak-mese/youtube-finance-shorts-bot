@@ -127,7 +127,7 @@ async def generate_audio(script, output_path):
     await communicate.save(output_path)
 
 def extract_random_background(target_duration, output_path):
-    """Arka plan videosunu keser, dikey yapar ve kaliteyi optimize eder."""
+    """Arka plan videosunu keser, dikey yapar ve SİYAH EKRAN OLMAMASI İÇİN DÖNGÜYE SOKAR."""
     bg_dir = "backgrounds"
     if not os.path.exists(bg_dir):
         raise Exception(f"HATA: '{bg_dir}' klasörü bulunamadı!")
@@ -145,15 +145,21 @@ def extract_random_background(target_duration, output_path):
     
     try:
         total_dur = float(res.stdout.strip())
-        start_time = random.uniform(0, max(0, total_dur - target_duration - 2))
+        # Videonun herhangi bir yerinden başlayabiliriz
+        start_time = random.uniform(0, max(0, total_dur - 1))
     except:
         start_time = 0
 
-    print(f"   - Video işleniyor: {os.path.basename(chosen_video)}...")
+    print(f"   - Video işleniyor (Döngü Modu): {os.path.basename(chosen_video)}...")
     
-    # Premium Efekt: Hafif karanlık ve yüksek kontrast (Yazılar parlasın diye)
+    # -stream_loop -1 komutu videonun sonsuz döngüye girmesini sağlar.
+    # Böylece video kısa olsa bile ses bitene kadar başa sarıp devam eder.
     subprocess.run([
-        'ffmpeg', '-y', '-ss', str(start_time), '-i', chosen_video, '-t', str(target_duration),
+        'ffmpeg', '-y', 
+        '-ss', str(start_time), 
+        '-stream_loop', '-1', 
+        '-i', chosen_video, 
+        '-t', str(target_duration),
         '-vf', 'crop=ih*(9/16):ih,scale=1080:1920,eq=brightness=-0.15:contrast=1.2', 
         '-c:v', 'libx264', '-preset', 'medium', '-crf', '18',
         '-threads', '4', '-an', output_path
@@ -272,7 +278,7 @@ async def main():
                 print("  4. Telegrama gönderiliyor...")
                 send_to_telegram(
                     video_out, 
-                    item.get('title', 'Finance News'), 
+                    item.get('title', item.get('title', 'Finance News')), 
                     item.get('description', "Don't miss out on the latest finance developments."),
                     item.get('tags', ['finance', 'news'])
                 )
