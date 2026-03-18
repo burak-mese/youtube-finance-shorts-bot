@@ -86,12 +86,28 @@ Return ONLY valid JSON array:
         content = resp.json()['choices'][0]['message']['content'].strip()
         
         # Gelişmiş JSON Ayıklama ve Tamir
-        match = re.search(r'\[\s*\{.*\}\s*\]', content, re.DOTALL)
+        match = re.search(r'\[.*\]', content, re.DOTALL)
         if match:
             clean_json = match.group(0)
+            # Hata düzeltme: Objeler arasına unutulan virgülleri ekle
             clean_json = re.sub(r'\}\s*\{', '}, {', clean_json)
+            # Hata düzeltme: Liste sonundaki fazla virgülleri temizle
             clean_json = re.sub(r',\s*\]', ']', clean_json)
-            return json.loads(clean_json, strict=False)
+            # Hata düzeltme: Görünmez kontrol karakterlerini temizle
+            clean_json = re.sub(r'[\x00-\x1F\x7F]', '', clean_json)
+            
+            try:
+                return json.loads(clean_json, strict=False)
+            except json.JSONDecodeError:
+                # Son çare: Regex ile objeleri tek tek çekmeyi dene
+                print("   ! Standart JSON okuma başarısız, gelişmiş ayıklama deneniyor...")
+                objects = re.findall(r'\{.*?\}', clean_json, re.DOTALL)
+                results = []
+                for obj_str in objects:
+                    try:
+                        results.append(json.loads(obj_str, strict=False))
+                    except: continue
+                return results
         else:
             print("   ! AI düzgün bir JSON formatı döndürmedi.")
             return []
@@ -145,7 +161,6 @@ def extract_random_background(target_duration, output_path):
 
 def create_text_image(text, font_path, font_size, max_width):
     """Sarı renkli, siyah çerçeveli ve çok satırlı altyazı görselleri oluşturur."""
-    # Satır arası boşluk ve padding için yüksekliği artırıyoruz
     image = Image.new("RGBA", (max_width, int(font_size * 5)), (0, 0, 0, 0))
     try: 
         font = ImageFont.truetype(font_path, font_size)
@@ -154,11 +169,9 @@ def create_text_image(text, font_path, font_size, max_width):
     
     draw = ImageDraw.Draw(image)
     
-    # Çok satırlı metin desteği için multiline_textbbox
+    # Çok satırlı metin desteği
     bbox = draw.multiline_textbbox((0, 0), text, font=font, align="center")
     tw, th = bbox[2]-bbox[0], bbox[3]-bbox[1]
-    
-    # Yazıyı dikeyde merkeze almak için y_pos hesabı
     y_pos = (image.height - th) / 2
     
     # Kalın siyah çerçeve (Stroke) ile sarı yazı
@@ -177,10 +190,10 @@ def create_shorts_video(video_path, audio_path, output_path, title):
     bg_clip = mp.VideoFileClip(video_path).set_audio(audio_clip)
 
     text_clips = []
-    # Üstteki başlık pozisyonunu biraz aşağı (250px) aldık ki arayüzde kesilmesin
+    # Üstteki başlık pozisyonu (Kesilmemesi için biraz daha aşağı alındı)
     safe_title = title.replace("'", "").replace('"', '')[:35].upper()
-    title_img = create_text_image(f"FINANCE NEWS\n{safe_title}", FONT, 50, 1080)
-    title_clip = mp.ImageClip(title_img).set_duration(audio_clip.duration).set_position(('center', 250))
+    title_img = create_text_image(f"FINANCE NEWS\n{safe_title}", FONT, 48, 1080)
+    title_clip = mp.ImageClip(title_img).set_duration(audio_clip.duration).set_position(('center', 260))
     text_clips.append(title_clip)
 
     # Dinamik kelime altyazıları (Tam merkezde)
@@ -260,7 +273,7 @@ async def main():
                 extract_random_background(a_dur + 0.5, video_raw)
                 create_shorts_video(video_raw, audio_path, video_out, item.get('title', 'NEWS'))
                 
-                # AI tarafından üretilen başlık, açıklama ve tagleri gönderiyoruz
+                # AI tarafından üretilen verileri Telegram'a gönderiyoruz
                 send_to_telegram(
                     video_out, 
                     item.get('title', 'Finans Haberi'), 
